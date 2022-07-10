@@ -1,0 +1,107 @@
+wwwwwww
+w.....w
+w.....w
+w01A..w
+w..w..w
+w.....w
+wwwwwww
+; 0
+
+wwwwwww
+w.....w
+w...0.w
+w..A..w
+w...1.w
+w.....w
+wwwwwww
+; 1
+
+wwwwwww
+w.....w
+w.1.0.w
+w..A..w
+w.0.1.w
+w.....w
+wwwwwww
+; 2
+
+wwwwwww
+w....0w
+w...w.w
+w....ww
+w...1.w
+wA....w
+wwwwwww
+; 3
+
+wwwwwww
+ww...0w
+ww....w
+ww..www
+w.11www
+wA...0w
+wwwwwww
+; 4
+
+wwwwwww
+w.....w
+w.....w
+w.1A0.w
+w.....w
+w.....w
+wwwwwww
+; 5
+
+wwwwwww
+......w
+......w
+.A....w
+w1....w
+...0..w
+wwwwwww
+; 6
+
+00....w
+...A..w
+ww11www
+ww..www
+...wwww
+......w
+.......
+; 7
+
+....0.w
+..+...w
+ww11www
+ww..www
+www...w
+......w
+...1..0
+; 8
+
+.....+w
+..1...w
+ww.wwww
+ww..www
+ww..www
+ww..www
+wwwwwww
+; 9
+
+ww.A.ww
+ww.1.ww
+ww...ww
+ww.g.ww
+ww...ww
+ww.0.ww
+wwwwwww
+; 10
+
+www.www
+ww...ww
+w.....w
+.A.1.0.
+w.....w
+ww...ww
+www.www
+; 11
