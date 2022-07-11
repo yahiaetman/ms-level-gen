@@ -291,12 +291,10 @@ class GMMConditionModel(ControllableConditionModel):
     
     def sample(self, size: Tuple[int, int], batch_size: int) -> torch.Tensor:
         if self.gmms:
-            if size in self.gmms:
-                gmm = self.gmms[size]
-            else:
+            gmm = self.gmms.get(size)
+            if gmm is None:
                 h, w = size
-                _, picked_size = min((abs(ht-h)+abs(wt-w), (ht, wt)) for ht, wt in self.gmms)
-                gmm = self.gmms[picked_size]
+                _, gmm = min((abs(hi-h)+abs(wi-w), gmmi) for (hi, wi), gmmi in self.gmms.items())
             means = gmm["means"]
             covariances = gmm["covariances"]
             weights = gmm["weights"]

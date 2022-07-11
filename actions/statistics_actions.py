@@ -16,7 +16,6 @@ def compute_statistics_ms(args: argparse.Namespace):
         return
     training_config = yaml.unsafe_load(open(training_config_path, 'r'))
 
-    game = games.create_game(training_config.game_config)
     sizes = config.get("sizes", training_config.sizes)
     generation_sizes = sizes + config.get("extra_sizes", [])
     prefix = config.get("prefix", "")
@@ -77,7 +76,46 @@ def compute_statistics_ms(args: argparse.Namespace):
 
         json.dump(stats, open(os.path.join(statistics_path, f"{prefix}statistics_{h}x{w}.json"), 'w'), indent=1)
 
-def register_statistics_ms(parser: argparse.ArgumentParser):
+def register_compute_statistics_ms(parser: argparse.ArgumentParser):
     parser.add_argument("path", type=str, help="path to the training results folder")
     config_tools.add_config_arguments(parser)
     parser.set_defaults(func=compute_statistics_ms)
+
+########################################
+########################################
+
+def generate_expressive_ranges_ms(args: argparse.Namespace):
+    import os, warnings, pathlib, yaml, json
+    from common.heatmap import Heatmaps
+
+    config_tools.register()
+    path = args.path
+    prefix = args.prefix
+    if prefix: prefix += "_"
+    config = config_tools.get_config_from_namespace(args)
+
+    output_path = os.path.join(path, "output")
+    statistics_path = os.path.join(path, "statistics")
+    pathlib.Path(statistics_path).mkdir(parents=True, exist_ok=True)
+
+    generation_stats_path = os.path.join(output_path, f"{prefix}generation_stats.yml")
+    if not os.path.exists(generation_stats_path):
+        warnings.warn("No generation statistics were found")
+        return
+    generation_stats = yaml.unsafe_load(open(generation_stats_path, 'r'))
+    generation_sizes = list(generation_stats.keys())
+
+    heatmaps = Heatmaps(config)
+    for size_index, size in enumerate(generation_sizes):
+        h, w = size
+        print(f"{size_index+1}/{len(generation_sizes)}: Working on Size {h}x{w} ...")
+        info = json.load(open(os.path.join(output_path, f"{prefix}levels_{h}x{w}.json"), 'r'))
+        heatmaps.update(size, info)
+        fig = heatmaps.render(size)
+        fig.savefig(os.path.join(output_path, f"{prefix}expressive_range_{h}x{w}.pdf"))
+
+def register_generate_expressive_ranges_ms(parser: argparse.ArgumentParser):
+    parser.add_argument("path", type=str, help="path to the training results folder")
+    parser.add_argument("-p", "--prefix", type=str, default="", help="the prefix of the generated levels files")
+    config_tools.add_config_arguments(parser)
+    parser.set_defaults(func=generate_expressive_ranges_ms)

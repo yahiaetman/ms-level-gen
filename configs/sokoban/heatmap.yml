@@ -2,8 +2,8 @@
 labels: ["Pushed Crates", "Solution Length"]
 coordinates: ["item['pushed-crates']", "item['solution-length']"]
 bounds:
-  !tup [3, 3]: !tup [!tup [1, 9],  !tup [1, 27]]
-  !tup [4, 4]: !tup [!tup [1, 16], !tup [1, 48]]
-  !tup [5, 5]: !tup [!tup [1, 25], !tup [1, 75]]
-  !tup [6, 6]: !tup [!tup [1, 36], !tup [1,108]]
-  !tup [7, 7]: !tup [!tup [1, 49], !tup [1,147]]
+  !tup [3, 3]: !tup [!tup [1, 5],  !tup [1, 27]]
+  !tup [4, 4]: !tup [!tup [1, 8], !tup [1, 48]]
+  !tup [5, 5]: !tup [!tup [1, 13], !tup [1, 75]]
+  !tup [6, 6]: !tup [!tup [1, 18], !tup [1,108]]
+  !tup [7, 7]: !tup [!tup [1, 25], !tup [1,147]]

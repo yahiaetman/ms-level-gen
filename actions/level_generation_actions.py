@@ -2,7 +2,7 @@ import argparse
 from common import config_tools
 
 def generate_levels_ms(args: argparse.Namespace):
-    import json, os, warnings, pathlib, torch, yaml
+    import json, os, warnings, pathlib, torch, yaml, time
     from games import create_game
     from methods.generator import MSGenerator
 
@@ -63,12 +63,14 @@ def generate_levels_ms(args: argparse.Namespace):
     output_path = os.path.join(path, "output")
     pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
 
+    generation_stats = {}
     for size_index, size in enumerate(generation_sizes):
         h, w = size
         print(f"{size_index+1}/{len(generation_sizes)}: Working on Size {h}x{w} ...")
         results = []
         found = 0
         requests = 0
+        start_time = time.time()
         for trial in range(1, trials+1):
             remaining = generation_amount - len(results)
             requests += remaining
@@ -84,8 +86,16 @@ def generate_levels_ms(args: argparse.Namespace):
             print(f"Trial {trial}/{trials}: Progress = {found}/{generation_amount} levels")
             if found == generation_amount:
                 break
-        print(f"Done in {trial} trials using {requests} requests")
+            elapsed_time = time.time() - start_time
+        print(f"Done in {elapsed_time} seconds ({trial} trials) using {requests} requests")
         json.dump(results, open(os.path.join(output_path, f"{prefix}levels_{h}x{w}.json"), 'w'))
+        generation_stats[size] = {
+            "trials": trials,
+            "requests": requests,
+            "solvable": found,
+            "elapsed_seconds": elapsed_time
+        }
+    yaml.dump(generation_stats, open(os.path.join(output_path, f"{prefix}generation_stats.yml"), 'w'))
 
 def register_generate_levels_ms(parser: argparse.ArgumentParser):
     parser.add_argument("path", type=str, help="path to the training results folder")
