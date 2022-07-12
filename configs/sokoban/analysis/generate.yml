@@ -1,0 +1,10 @@
+generation_sizes:
+- !tup [3, 3]
+- !tup [4, 4]
+- !tup [5, 5]
+- !tup [6, 6]
+- !tup [7, 7]
+- !tup [8, 8]
+- !tup [9, 9]
+generation_amount: 10000
+trials: 1

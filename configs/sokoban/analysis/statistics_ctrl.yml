@@ -1,0 +1,19 @@
+controlled_conditions:
+  pushed-crates:
+    tolerence:
+      !tup [3, 3]: 2
+      !tup [4, 4]: 2
+      !tup [5, 5]: 2
+      !tup [6, 6]: 2
+      !tup [7, 7]: 2
+      !tup [8, 8]: 2
+      !tup [9, 9]: 2
+  solution-length:
+    tolerence:
+      !tup [3, 3]: 10
+      !tup [4, 4]: 10
+      !tup [5, 5]: 10
+      !tup [6, 6]: 10
+      !tup [7, 7]: 10
+      !tup [8, 8]: 10
+      !tup [9, 9]: 10

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 import yaml
 import dataclasses
 import argparse
@@ -116,7 +116,7 @@ def register():
 # Update An Object with Nested-Key Value Pairs #
 ################################################
 
-def __update_object(obj, keys: str, value):
+def __update_object(obj, keys: List[str], value):
     if len(keys) == 0: return value
     top = keys[0]
     if obj is None:
@@ -141,32 +141,60 @@ def update_object(obj, updates: Dict[str, Any]):
         obj = __update_object(obj, keys, value)
     return obj
 
+def access_object(obj, key: Union[str, List[str]]):
+    if isinstance(key, str): 
+        if len(key) == 0: return obj
+        key = key.split('.')
+    if len(key) == 0: return obj
+    top = key[0]
+    if obj is None:
+        return None
+    elif isinstance(obj, list):
+        assert top.isdigit(), "a list accessor must be a number"
+        index = int(top)
+        return access_object(obj[index], key[1:])
+    elif isinstance(obj, dict):
+        return access_object(obj[top], key[1:])
+    elif hasattr(obj, top):
+        return access_object(getattr(obj, top), key[1:])
+    else:
+        return obj
+
 #################################################
 # Argument Parsing For Configuration Management #
 #################################################
 
-class ParseKwargs(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, self.dest, dict())
-        for value in values:
-            key, value = value.split('=')
-            if key.endswith(':'):
-                key = key[:-1]
-                value = eval(value)
-            getattr(namespace, self.dest)[key] = value
-
-def add_config_arguments(parser: argparse.ArgumentParser):
-    parser.add_argument('-c', '--config', nargs='+', default=[])
-    parser.add_argument('-o', '--override', nargs='*', action=ParseKwargs)
+def add_config_arguments(parser: argparse.ArgumentParser, config_file_args = None, override_args = None):
+    config_file_args = config_file_args or ['-cfg', '--config']
+    override_args = override_args or ['-ovr', '--override']
+    parser.add_argument(*config_file_args, nargs='+', default=[])
+    parser.add_argument(*override_args, nargs='*', action='store', default=None)
 
 def get_config_from_namespace(args: argparse.Namespace):
+    
     config_files = args.config
     configs = [c for config_file in config_files for c in yaml.unsafe_load_all(open(config_file, 'r'))]
     if configs:
         config = merge(*configs)
     else:
         config = {}
+    
     overrides = args.override
     if overrides is not None:
-        config = update_object(config, overrides)
+        updates = {}
+        for override in overrides:
+            key, value = override.split('=')
+            if key.endswith(':'):
+                key = key[:-1]
+                value = eval(value)
+            updates[key] = value
+        config = update_object(config, updates)
     return config
+
+###########################
+# Read Configuration File #
+###########################
+
+def read_config_file(path: str):
+    config = yaml.unsafe_load_all(open(path, 'r'))
+    return merge(*config)

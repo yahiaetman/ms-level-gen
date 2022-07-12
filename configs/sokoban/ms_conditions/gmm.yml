@@ -1,4 +1,4 @@
-condition_model_config: !obj:methods.ms_conditions/GMMConditionModel.Config
+!obj:methods.ms_conditions/GMMConditionModel.Config
   snap: True
   n_components: 16
   max_iterations: 100

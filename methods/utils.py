@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional
+from typing import Callable, Iterable, List, Optional, Tuple
 from torch import nn
 
 def snake(height: int, width: int):
@@ -19,3 +19,13 @@ def feedforward(input_size: int, output_size: int, hidden_sizes: Optional[List[i
         size = hidden_size
     layers.append(nn.Linear(size, output_size))
     return nn.Sequential(*layers)
+
+def find_closest_size(size: Tuple[int, int], others: Iterable[Tuple[int, int]]):
+    h, w = size
+    _, _, closest = min(( (abs(h-hi)+abs(w-wi), i, (hi,wi)) for i, (hi, wi) in enumerate(others) ), default=(None, None, None))
+    return closest
+
+def find_closest_smaller_size(size: Tuple[int, int], others: Iterable[Tuple[int, int]]):
+    h, w = size
+    _, _, closest = min(( (abs(h-hi)+abs(w-wi), i, (hi,wi)) for i, (hi, wi) in enumerate(others) if (hi <= h) and (wi <= w) ), default=(None, None, None))
+    return closest

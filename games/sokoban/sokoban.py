@@ -1,6 +1,6 @@
 from collections import Counter
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from games.game import Game, Level, ConditionUtility
 import random
 from .parallel_solver import SokobanParallelSolver
@@ -164,14 +164,14 @@ class Sokoban(Game):
         return SokobanConditionUtility()
 
 class SokobanConditionUtility(ConditionUtility):
-    def get_snapping_function(self, prop_name: str) -> Callable[[float, Tuple[int, int]], float]:
+    def get_snapping_function(self, prop_name: str, size: Optional[Tuple[int, int]] = None) -> Union[Callable[[float, Tuple[int, int]], float], Callable[[float], float]]:
         
         if prop_name == "difficulty":
             def snap(x: float, size: Tuple[int, int]):
                 h, w = size
                 area = h*w
                 return self.mul(self.clamp(self.round(self.mul(x, self.const(area))), self.const(1), None), self.const(1/area))
-            return snap
+            return snap if size is None else (lambda x: snap(x, size))
         
         if prop_name == "pushed-crate-ratio":
             def snap(x: float, size: Tuple[int, int]):
@@ -179,23 +179,23 @@ class SokobanConditionUtility(ConditionUtility):
                 wh_max = max(h, w)
                 area = h*w
                 return self.mul(self.clamp(self.round(self.mul(x, self.const(wh_max))), self.const(1), self.const(area-2)), self.const(1/wh_max))
-            return snap 
+            return snap if size is None else (lambda x: snap(x, size)) 
         
         if prop_name == "wall-ratio":
             def snap(x: float, size: Tuple[int, int]):
                 h, w = size
                 area = h*w
                 return self.mul(self.clamp(self.round(self.mul(x, self.const(area))), self.const(0), self.const(area-3)), self.const(1/area))
-            return snap
+            return snap if size is None else (lambda x: snap(x, size))
         
         if prop_name == "crate-ratio":
             def snap(x: float, size: Tuple[int, int]):
                 h, w = size
                 area = h*w
                 return self.mul(self.clamp(self.round(self.mul(x, self.const(area))), self.const(1), self.const(area-2)), self.const(1/area))
-            return snap 
+            return snap if size is None else (lambda x: snap(x, size)) 
         
-        return lambda x, _: x
+        return (lambda x, _: x) if size is None else (lambda x: x)
     
     def get_tolerence(self, prop_name: str, size: Tuple[int, int]) -> float:
         h, w = size

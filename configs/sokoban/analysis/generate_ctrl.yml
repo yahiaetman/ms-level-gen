@@ -1,0 +1,34 @@
+generation_sizes:
+- !tup [3, 3]
+- !tup [4, 4]
+- !tup [5, 5]
+- !tup [6, 6]
+- !tup [7, 7]
+- !tup [8, 8]
+- !tup [9, 9]
+controlled_conditions:
+- control_name: "pushed-crates"
+  condition: "pushed-crate-ratio"
+  mapping: "value/max(size[0], size[1])"
+  amount_per_pin: 1000
+  values:
+    !tup [3, 3]: !range [1,4]
+    !tup [4, 4]: !range [1,7]
+    !tup [5, 5]: !range [1,11]
+    !tup [6, 6]: !range [1,11]
+    !tup [7, 7]: !range [1,11]
+    !tup [8, 8]: !range [1,11]
+    !tup [9, 9]: !range [1,11]
+- control_name: "solution-length"
+  condition: "difficulty"
+  mapping: "value/(size[0] * size[1])"
+  amount_per_pin: 100
+  values:
+    !tup [3, 3]: !range [1,15]
+    !tup [4, 4]: !range [1,49]
+    !tup [5, 5]: !range [1,101]
+    !tup [6, 6]: !range [1,101]
+    !tup [7, 7]: !range [1,101]
+    !tup [8, 8]: !range [1,101]
+    !tup [9, 9]: !range [1,101]
+trials: 1

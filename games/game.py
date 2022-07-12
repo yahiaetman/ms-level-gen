@@ -17,9 +17,8 @@ class ConditionUtility(ABC):
         self.mul = lambda x, y: x*y
         self.const = lambda x: x
     
-    @abstractmethod
-    def get_snapping_function(self, prop_name: str) -> Callable[[float, Tuple[int, int]], float]:
-        pass
+    def get_snapping_function(self, prop_name: str, size: Optional[Tuple[int, int]] = None) -> Union[Callable[[float, Tuple[int, int]], float], Callable[[float], float]]:
+        return (lambda x, _: x) if size is None else (lambda x: x)
 
     def get_tolerence(self, prop_name: str, size: Tuple[int, int]) -> float:
         return 1e-8

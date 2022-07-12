@@ -1,0 +1,5 @@
+properties:
+- "walls"
+- "crates"
+- "pushed-crates"
+- "solution-length"

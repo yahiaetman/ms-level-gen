@@ -79,7 +79,7 @@ class Heatmaps:
             bounds = self.config.bounds.get(size)
             if bounds is None:
                 h, w = size
-                _, bounds = min((abs(hi-h)+abs(wi-w), boundsi) for (hi, wi), boundsi in self.config.bounds.items())
+                _, _, bounds = min((abs(hi-h)+abs(wi-w), (hi, wi), boundsi) for (hi, wi), boundsi in self.config.bounds.items())
             coordinates = tuple(wrap_with_size(size, fn) for fn in self.config.coordinates)
             heatmap = Heatmap(Heatmap.Config(self.config.labels, coordinates, bounds))
             self.heatmaps[size] = heatmap
@@ -89,8 +89,9 @@ class Heatmaps:
         heatmap = self[size]
         heatmap.update(info)
         
-    
     def render(self, size: Tuple[int, int]):
         return self[size].render()
 
-        
+    def render_all(self):
+        return {size:heatmap.render() for size, heatmap in self.heatmaps.items()}
+

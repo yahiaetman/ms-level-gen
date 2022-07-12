@@ -46,7 +46,7 @@ class Trainer:
 
         self.game = create_game(config.game_config)
         self.dataset = Dataset(self.game, config.conditions, config.sizes, config.dataset_config)
-        self.condition_model: ConditionModel = config.condition_model_config.model_constructor(self.game, config.conditions, config.sizes)
+        self.condition_model: ConditionModel = config.condition_model_config.model_constructor(self.game, config.conditions)
         self.netG: GFlowMSGenerator = config.generator_config.model_constructor(len(self.game.tiles), len(config.conditions)).to(self.device)
         self.optG = GFlowMSTBOptimizer(self.netG, config.sizes, config.optimizer_config)
         self.config = config
