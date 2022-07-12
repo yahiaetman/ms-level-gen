@@ -1,4 +1,8 @@
-properties:
+counter:
+- "solution"
+- "push-signature"
+- "crate-signature"
+summary:
 - "walls"
 - "crates"
 - "pushed-crates"

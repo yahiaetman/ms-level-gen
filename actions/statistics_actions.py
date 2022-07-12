@@ -16,8 +16,6 @@ def compute_statistics(info: List[Dict], config: Dict):
     import games
     import numpy as np
 
-    properties = config["properties"]
-    
     total = len(info)
     compilable = [item for item in info if item["compilable"]]
     solvable = [item for item in compilable if item["solvable"]]
@@ -45,7 +43,15 @@ def compute_statistics(info: List[Dict], config: Dict):
         **summary("Entropy", entropies)
     }
 
-    for prop_name in properties:
+    for prop_name in config.get("counter", []):
+        prop_values = {tuple(item[prop_name]) for item in solvable}
+        stats.update({
+            f"unique-{prop_name}-count": len(prop_values),
+            f"unique-{prop_name}-to-generated%": len(prop_values) / total * 100,
+            f"unique-{prop_name}-to-solvable%": len(prop_values) / max(1, solvable_count) * 100,
+        })
+
+    for prop_name in config.get("summary", []):
         prop_values = [item[prop_name] for item in solvable]
         stats.update(summary(prop_name, prop_values))
 
