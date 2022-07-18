@@ -1,0 +1,11 @@
+!obj:common.heatmap/Heatmaps.Config
+labels: ["Jumps", "Solution Length"]
+coordinates: ["item['jumps']", "item['solution-length']"]
+bounds:
+  !tup [3, 4]: !tup [!tup [0, 12], !tup [1, 24]]
+  !tup [3, 6]: !tup [!tup [0, 18], !tup [1, 36]]
+  !tup [5, 4]: !tup [!tup [0, 20], !tup [1, 40]]
+  !tup [5, 6]: !tup [!tup [0, 30], !tup [1, 60]]
+  !tup [5,11]: !tup [!tup [0, 55], !tup [1,110]]
+  !tup [7, 6]: !tup [!tup [0, 42], !tup [1, 84]]
+  !tup [7,11]: !tup [!tup [0, 77], !tup [1,154]]

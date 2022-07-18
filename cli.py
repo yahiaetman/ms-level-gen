@@ -2,7 +2,9 @@ import argparse
 from actions.train_actions import register_train, register_resume
 from actions.condition_model_actions import register_generate_condition_model_ms
 from actions.level_generation_actions import register_generate_levels_ms, register_generate_levels_controllable_ms
-from actions.statistics_actions import register_compute_statistics, register_compute_statistics_ms, register_compute_ctrl_statistics, register_compute_ctrl_statistics_ms, register_generate_expressive_ranges_ms
+from actions.statistics_actions import register_compute_statistics, register_compute_statistics_ms
+from actions.statistics_actions import register_compute_ctrl_statistics, register_compute_ctrl_statistics_ms
+from actions.statistics_actions import register_generate_expressive_ranges_ms, register_render_level_sample_ms, register_render_percentile_levels_ms
 
 def main():
     parser = argparse.ArgumentParser("Run Training")
@@ -19,6 +21,8 @@ def main():
     register_compute_ctrl_statistics(subparsers.add_parser("compute-ctrl-statistics", aliases=["cstats"]))
     register_compute_ctrl_statistics_ms(subparsers.add_parser("compute-ctrl-statistics-ms", aliases=["cstatsms"]))
     register_generate_expressive_ranges_ms(subparsers.add_parser("draw-expressive-range-ms", aliases=["erms"]))
+    register_render_level_sample_ms(subparsers.add_parser("draw-level-sample-ms", aliases=["imms"]))
+    register_render_percentile_levels_ms(subparsers.add_parser("draw-level-percentiles-ms", aliases=["perimms"]))
     
     args = parser.parse_args()
     args.func(args)

@@ -1,13 +1,17 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict
 from .game import Game
+from .dave.dave import Dave
+from .maze.maze import Maze
 from .sokoban.sokoban import Sokoban
 from .zelda.zelda import Zelda
 from . import utils
 
 GAMES = {
+    "dave": Dave,
+    "maze": Maze,
     "sokoban": Sokoban,
-    "zelda": Zelda
+    "zelda": Zelda,
 }
 
 def get_game_class_by_name(name: str):

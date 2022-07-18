@@ -1,0 +1,7 @@
+counter: {}
+summary:
+- "walls"
+- "enemies"
+- "nearest-enemy-distance"
+- "farthest-enemy-distance"
+- "path-length"

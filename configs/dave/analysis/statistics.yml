@@ -1,0 +1,7 @@
+counter: {}
+summary:
+- "walls"
+- "diamonds"
+- "spikes"
+- "jumps"
+- "solution-length"

@@ -22,9 +22,6 @@ def compute_statistics(info: List[Dict], config: Dict):
     solvable_count = len(solvable)
     levels = [item["level"] for item in solvable]
     unique = set(tuple(tuple(row) for row in level) for level in levels)        
-    unique_solutions = set(item["solution"] for item in solvable)
-    unique_push_signatures = set(tuple(item["push-signature"]) for item in solvable)
-    unique_crate_signatures = set(tuple(item["crate-signature"]) for item in solvable)
 
     levels_np = np.array(levels)
     _, h, w = levels_np.shape
@@ -36,9 +33,6 @@ def compute_statistics(info: List[Dict], config: Dict):
         "Compilable%": len(compilable) / total * 100,
         "Solvable%": solvable_count / total * 100,
         "Duplicates%": (solvable_count - len(unique)) / max(solvable_count, 1) * 100,
-        "Unique-Solutions": len(unique_solutions),
-        "Unique-Push-Signatures": len(unique_push_signatures),
-        "Unique-Crate-Signatures": len(unique_crate_signatures),
         "Diversity": diversity,
         **summary("Entropy", entropies)
     }
@@ -72,7 +66,7 @@ def action_compute_statistics(args: argparse.Namespace):
     if len(info) == 0:
         print("The file is empty, No statistics will be generated.")
 
-    yaml.dump(compute_statistics(info, config), open(output_path, 'w'), indent=1)
+    yaml.dump(compute_statistics(info, config), open(output_path, 'w'), sort_keys=False)
 
 def register_compute_statistics(parser: argparse.ArgumentParser):
     parser.add_argument("levels", type=str, help="path to the generated levels")
@@ -109,7 +103,7 @@ def action_compute_statistics_ms(args: argparse.Namespace):
         print(f"{size_index+1}/{len(level_groups)}: Working on Size {h}x{w} ...")
         stats[size] = compute_statistics(info, config)
 
-    yaml.dump(stats, open(output_path, 'w'), indent=1)
+    yaml.dump(stats, open(output_path, 'w'), sort_keys=False)
 
 def register_compute_statistics_ms(parser: argparse.ArgumentParser):
     parser.add_argument("levels", type=str, help="path (pattern) to the generated levels")
@@ -174,7 +168,7 @@ def action_compute_ctrl_statistics(args: argparse.Namespace):
         if closest_size is None: continue
         tolerences[control_name] = control_tolerences[closest_size]
 
-    yaml.dump(compute_ctrl_statistics(info, tolerences), open(output_path, 'w'), indent=1)
+    yaml.dump(compute_ctrl_statistics(info, tolerences), open(output_path, 'w'), sort_keys=False)
 
 def register_compute_ctrl_statistics(parser: argparse.ArgumentParser):
     parser.add_argument("levels", type=str, help="path to the generated levels")
@@ -218,7 +212,7 @@ def action_compute_ctrl_statistics_ms(args: argparse.Namespace):
             tolerences[control_name] = control_tolerences[closest_size]
         stats[size] = compute_ctrl_statistics(info, tolerences)
 
-    yaml.dump(stats, open(output_path, 'w'), indent=1)
+    yaml.dump(stats, open(output_path, 'w'), sort_keys=False)
 
 def register_compute_ctrl_statistics_ms(parser: argparse.ArgumentParser):
     parser.add_argument("levels", type=str, help="path (pattern) to the generated levels")
@@ -266,3 +260,154 @@ def register_generate_expressive_ranges_ms(parser: argparse.ArgumentParser):
     parser.add_argument("output", type=str, help="the prefix of the used for expressive ranges")
     config_tools.add_config_arguments(parser)
     parser.set_defaults(func=action_generate_expressive_ranges_ms)
+
+##########################################
+##########################################
+
+def action_render_level_sample_ms(args: argparse.Namespace):
+    import json, pathlib, yaml, glob, random
+    from collections import defaultdict
+    import numpy as np
+    from . import utils
+    from games import create_game, img_utils
+    
+    config_tools.register()
+    levels_glob_path: str = args.levels
+    outputs_path: str = args.output
+    game_path: str = args.game
+    sample_count = args.count
+
+    if "%END" in levels_glob_path:
+        checkpoint_info_path = utils.find_in_parents(levels_glob_path, "checkpoint.yml")
+        assert checkpoint_info_path is not None, "The checkpoint file is needed to know the last training step put it is not found"
+        checkpoint_info = yaml.unsafe_load(open(checkpoint_info_path, 'r'))
+        checkpoint_step = checkpoint_info["step"]
+        levels_glob_path = levels_glob_path.replace("%END", str(checkpoint_step))
+
+    if game_path == "":
+        training_config_path = utils.find_in_parents(levels_glob_path, "config.yml")
+        assert training_config_path is not None, "The training configuation file is need to know the conditions and/or the game"
+        training_config = config_tools.read_config_file(training_config_path)
+    if game_path == "":
+        game_config = training_config.game_config
+    else:
+        game_config = utils.access_yaml(game_path)
+
+    game = create_game(game_config)
+
+    levels_files = glob.glob(levels_glob_path)
+    level_groups = defaultdict(list)
+    for levels_file in levels_files:
+        info = json.load(open(levels_file, 'r'))
+        for item in info:
+            level = item["level"]
+            h, w = len(level), len(level[0])
+            level_groups[(h, w)].append(item)
+    
+    pathlib.Path(outputs_path).parent.mkdir(parents=True, exist_ok=True)
+    random.seed(args.seed)
+
+    for size_index, (size, info) in enumerate(level_groups.items()):
+        h, w = size
+        print(f"{size_index+1}/{len(level_groups)}: Working on Size {h}x{w} ...")
+        solvable = [item["level"] for item in info if item["solvable"]]
+        unsolvable = [item["level"] for item in info if not item["solvable"]]
+        
+        solvable_sample_count = min(len(solvable), sample_count)
+        unsolvable_sample_count = min(len(unsolvable), sample_count)
+        
+        if solvable_sample_count != 0:
+            sample = random.sample(solvable, solvable_sample_count)
+            images = game.render(np.array(sample))
+            img_utils.save_images(f"{outputs_path}_solvable_{h}x{w}.png", images, (1, solvable_sample_count))
+        
+        if unsolvable_sample_count != 0:
+            sample = random.sample(unsolvable, unsolvable_sample_count)
+            images = game.render(np.array(sample))
+            img_utils.save_images(f"{outputs_path}_unsolvable_{h}x{w}.png", images, (1, unsolvable_sample_count))
+
+def register_render_level_sample_ms(parser: argparse.ArgumentParser):
+    parser.add_argument("levels", type=str, help="path to the level data")
+    parser.add_argument("output", type=str, help="path to images")
+    parser.add_argument("count", type=int, help="the number of images to generate")
+    parser.add_argument("-g", "--game", type=str, default="", help="the game configuration")
+    parser.add_argument("-s", "--seed", type=int, default=420, help="the random seed for sampling")
+    parser.set_defaults(func=action_render_level_sample_ms)
+
+##########################################
+##########################################
+
+def action_render_percentile_levels_ms(args: argparse.Namespace):
+    import json, pathlib, yaml, glob, warnings
+    from collections import defaultdict
+    import numpy as np
+    from . import utils
+    from games import create_game, img_utils
+    
+    config_tools.register()
+    levels_glob_path: str = args.levels
+    outputs_path: str = args.output
+    game_path: str = args.game
+    sample_count: int = args.count
+    properties = args.properties
+
+    assert sample_count >= 1, "sample count cannot be less than 0"
+    percentiles = [0.5]
+    if sample_count >= 2:
+        percentiles = [i/(sample_count-1) for i in range(sample_count)]
+
+    if "%END" in levels_glob_path:
+        checkpoint_info_path = utils.find_in_parents(levels_glob_path, "checkpoint.yml")
+        assert checkpoint_info_path is not None, "The checkpoint file is needed to know the last training step put it is not found"
+        checkpoint_info = yaml.unsafe_load(open(checkpoint_info_path, 'r'))
+        checkpoint_step = checkpoint_info["step"]
+        levels_glob_path = levels_glob_path.replace("%END", str(checkpoint_step))
+
+    if game_path == "":
+        training_config_path = utils.find_in_parents(levels_glob_path, "config.yml")
+        assert training_config_path is not None, "The training configuation file is need to know the conditions and/or the game"
+        training_config = config_tools.read_config_file(training_config_path)
+    if game_path == "":
+        game_config = training_config.game_config
+    else:
+        game_config = utils.access_yaml(game_path)
+
+    game = create_game(game_config)
+
+    levels_files = glob.glob(levels_glob_path)
+    level_groups = defaultdict(list)
+    for levels_file in levels_files:
+        info = json.load(open(levels_file, 'r'))
+        for item in info:
+            if not item["solvable"]: continue
+            level = item["level"]
+            h, w = len(level), len(level[0])
+            level_groups[(h, w)].append(item)
+    
+    pathlib.Path(outputs_path).parent.mkdir(parents=True, exist_ok=True)
+
+    for size_index, (size, info) in enumerate(level_groups.items()):
+        h, w = size
+        print(f"{size_index+1}/{len(level_groups)}: Working on Size {h}x{w} ...")
+        
+        if len(info) < len(percentiles):
+            warnings.warn(f"The number of solvable levels with size {h}x{w} are not enough to create a percentile map of size {len(percentiles)}")
+            continue
+        
+        samples = []
+        for prop_name in properties:
+            info.sort(key=(lambda item: item[prop_name]))
+            count = len(info)
+            indices = [round(p*(count-1)) for p in percentiles]
+            samples.append([info[index]["level"] for index in indices])
+        
+        images = game.render(np.array(samples))
+        img_utils.save_images(f"{outputs_path}_{h}x{w}.png", images, (len(properties), len(percentiles)))
+
+def register_render_percentile_levels_ms(parser: argparse.ArgumentParser):
+    parser.add_argument("levels", type=str, help="path to the level data")
+    parser.add_argument("output", type=str, help="path to images")
+    parser.add_argument("count", type=int, help="the number of images to generate")
+    parser.add_argument("properties", nargs="+", type=str, help="the properties on which the percentiles are selected")
+    parser.add_argument("-g", "--game", type=str, default="", help="the game configuration")
+    parser.set_defaults(func=action_render_percentile_levels_ms)

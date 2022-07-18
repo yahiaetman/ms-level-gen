@@ -1,9 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
-import json
-import random, os, datetime, pathlib
+import os, datetime, pathlib
 import time
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, List, Optional, Tuple
 import warnings
 
 import torch
@@ -15,9 +14,9 @@ from common.config_tools import config
 from games import GameConfig, create_game
 from common.heatmap import Heatmaps
 from .dataset import Dataset
-from methods.ms_conditions import ConditionModel, get_condition_model_by_name
-from .models import GFlowMSGenerator, get_msgen_by_name
-from .optimizers import GFlowMSTBOptimizer
+from methods.ms_conditions import ConditionModel
+from .models import SeqMSGenerator
+from .optimizers import SeqMSOptimizer
 
 class Trainer:
     @config
@@ -26,12 +25,16 @@ class Trainer:
         game_config: GameConfig
         conditions: List[str]
         sizes: List[Tuple[int, int]]
+        dataset_seed_path: str
+        dataset_postprocessing: List[str]
         dataset_config: Dataset.Config
         condition_model_config: Any
         generator_config: Any
-        optimizer_config: GFlowMSTBOptimizer.Config
+        optimizer_config: SeqMSOptimizer.Config
         training_steps: int
         batch_size: int
+        bootstrapping_period: int
+        bootstrapping_batch_size: int
         checkpoint_period: int
         sample_render_period: int = 10
         heatmap_config: Optional[Heatmaps.Config] = None
@@ -47,8 +50,8 @@ class Trainer:
         self.game = create_game(config.game_config)
         self.dataset = Dataset(self.game, config.conditions, config.sizes, config.dataset_config)
         self.condition_model: ConditionModel = config.condition_model_config.model_constructor(self.game, config.conditions)
-        self.netG: GFlowMSGenerator = config.generator_config.model_constructor(len(self.game.tiles), len(config.conditions)).to(self.device)
-        self.optG = GFlowMSTBOptimizer(self.netG, config.sizes, config.optimizer_config)
+        self.netG: SeqMSGenerator = config.generator_config.model_constructor(len(self.game.tiles), len(config.conditions)).to(self.device)
+        self.optG = SeqMSOptimizer(self.netG, config.sizes, config.optimizer_config)
         self.config = config
 
         self.heatmap = None
@@ -87,9 +90,29 @@ class Trainer:
         else:
             warnings.warn("There is no checkpoint. The training will start from scratch.")
         
-        self.train()
+        self.__start_trainning_loop()
         
     def train(self):
+        levels, _ = self.game.load_dataset(self.config.dataset_seed_path)
+        
+        level_groups = {size:[] for size in self.config.sizes}
+        for level in levels:
+            size = len(level), len(level[0])
+            if (group := level_groups.get(size)) is not None:
+                group.append(level)
+        
+        postprocessors = self.game.dataset_postprocessors
+        postprocessors = [postprocessors[name] for name in self.config.dataset_postprocessing]
+
+        for size, group in level_groups.items():
+            if len(group) == 0: continue
+            for postprocessor in postprocessors:
+                group = postprocessor(group)
+            self.dataset.analyze_and_update(size, group)
+
+        self.__start_trainning_loop()
+
+    def __start_trainning_loop(self):
         batch_size = self.config.batch_size
 
         self.writer = tensorboard.writer.SummaryWriter(log_dir=self.log_path, purge_step=self.starting_step)
@@ -100,51 +123,41 @@ class Trainer:
 
         pbar = tqdm.tqdm(total=self.config.training_steps, initial=self.starting_step-1, desc="Start..", dynamic_ncols=True)
         for step in range(self.starting_step, self.config.training_steps+1):
-            for size_index, size in enumerate(self.dataset.sizes):
-                pbar.set_description(f"{size}: Query Conditions...")
-                query_conditions = self.condition_model.sample(size, batch_size)
+            augment_dataset = (step % self.config.bootstrapping_period) == 0
+            for size in self.dataset.sizes:
+
+                pbar.set_description(f"{size}: Sample Batch")
+                batch = self.dataset.sample(size, batch_size)
+                if batch is not None:
+                    levels, conditions = batch
+                    pbar.set_description(f"{size}: Train....")
+                    loss = self.optG.step(conditions.to(self.device), levels.to(self.device))
+                    self.writer.add_scalar(f"Training/Loss_{size}", loss, step)
                 
-                pbar.set_description(f"{size}: Ask For Levels.....")
-                levels = self.optG.ask(query_conditions.to(self.device), size)
+                if augment_dataset:
+                    pbar.set_description(f"{size}: Query Conditions...")
+                    query_conditions = self.condition_model.sample(size, batch_size)
+                    
+                    pbar.set_description(f"{size}: Query Levels.....")
+                    levels = self.netG.generate(query_conditions.to(self.device), size)
 
-                if step%self.config.sample_render_period == 0:
-                    self.writer.add_images(f"Sample/Levels_{size}", self.game.render(levels.cpu().numpy()), step)
+                    if step%self.config.sample_render_period == 0:
+                        self.writer.add_images(f"Sample/Levels_{size}", self.game.render(levels.cpu().numpy()), step)
+                    
+                    pbar.set_description(f"{size}: Update Dataset.....")
+                    info, added_mask, stats  = self.dataset.analyze_and_update(size, levels.tolist(), query_conditions)
+
+                    if self.heatmap is not None:
+                        self.heatmap.update(size, info)
                 
-                pbar.set_description(f"{size}: Update Dataset.....")
-                info, added_mask, log_rewards, stats  = self.dataset.analyze_and_update(size, levels.tolist(), query_conditions)
+                    pbar.set_description(f"{size}: Update Cond-Model..")
+                    self.condition_model.update(size, [item for item, is_added in zip(info, added_mask) if is_added])
 
-                if self.heatmap is not None:
-                    self.heatmap.update(size, info)
-                
-                pbar.set_description(f"{size}: Update Cond-Model..")
-                self.condition_model.update(size, [item for item, is_added in zip(info, added_mask) if is_added])
-                
-                losses, log_z0s = {}, {}
+                    self.writer.add_scalars(f"Generation/Quality_{size}", stats, step)
 
-                if size_index == 0 or len(self.dataset.clusters[size]) >= self.dataset.config.cluster_threshold.get(size, 0):
-                    pbar.set_description(f"{size}: Tell Optimizer.....")
-                    loss, log_z0 = self.optG.tell(log_rewards.to(self.device))
-                    losses["on-policy"] = loss
-                    log_z0s["on-policy"] = log_z0
-
-                pbar.set_description(f"{size}: Sample Replay Batch")
-                replay_batch = self.dataset.sample(size, batch_size)
-                if replay_batch is not None:
-                    replay_levels, replay_conditions, replay_log_rewards = replay_batch
-                    pbar.set_description(f"{size}: Train on Replay....")
-                    replay_loss, replay_log_z0 = self.optG.replay(
-                        replay_conditions.to(self.device), 
-                        replay_levels.to(self.device), 
-                        replay_log_rewards.to(self.device))
-                    losses["replay"] = replay_loss
-                    log_z0s["replay"] = replay_log_z0
-            
-                self.writer.add_scalars(f"Training/Loss_{size}", losses, step)
-                self.writer.add_scalars(f"Training/LogZ0_{size}", log_z0s, step)
-                self.writer.add_scalars(f"Generation/Quality_{size}", stats, step)
-
-            self.writer.add_scalars(f"Dataset/Size", {str(size):len(items) for size, items in self.dataset.items.items()}, step)
-            self.writer.add_scalars(f"Dataset/Clusters", {str(size):len(clusters) for size, clusters in self.dataset.clusters.items()}, step)
+            if augment_dataset:
+                self.writer.add_scalars(f"Dataset/Size", {str(size):len(items) for size, items in self.dataset.items.items()}, step)
+                self.writer.add_scalars(f"Dataset/Clusters", {str(size):len(clusters) for size, clusters in self.dataset.clusters.items()}, step)
 
             if self.heatmap is not None and step % self.config.heatmap_render_period == 0:
                 for size in self.dataset.sizes:

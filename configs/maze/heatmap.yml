@@ -1,0 +1,11 @@
+!obj:common.heatmap/Heatmaps.Config
+labels: ["Walls", "Maximum Path Length"]
+coordinates: ["item['walls']", "item['maximum-path-length']"]
+bounds:
+  !tup [4, 4]: !tup [!tup [0, 16], !tup [0, 16]]
+  !tup [4, 8]: !tup [!tup [0, 32], !tup [0, 32]]
+  !tup [8, 4]: !tup [!tup [0, 32], !tup [0, 32]]
+  !tup [8, 8]: !tup [!tup [0, 64], !tup [0, 64]]
+  !tup [8,14]: !tup [!tup [0,122], !tup [0,122]]
+  !tup [14,8]: !tup [!tup [0,122], !tup [0,122]]
+  !tup [14,14]: !tup [!tup [0,196], !tup [0,196]]

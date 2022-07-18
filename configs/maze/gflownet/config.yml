@@ -2,41 +2,47 @@
 game_config: !inc "~/../game.yml"
 
 conditions:
-  - "pushed-crate-ratio"
-  - "difficulty"
+  - "wall-ratio"
+  - "maximum-path-length-norm"
 
 sizes:
-  - !tup [3, 3]
   - !tup [4, 4]
-  - !tup [5, 5]
-  - !tup [6, 6]
-  - !tup [7, 7]
+  - !tup [4, 8]
+  - !tup [8, 4]
+  - !tup [8, 8]
+  - !tup [8, 14]
+  - !tup [14, 8]
+  - !tup [14, 14]
 
 dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
   data_augmentation: false
   diversity_sampling: true
   diversity_reward: true
-  property_reward: "math.log(item['solution-length'])"
-  cluster_key: "(item['pushed-crates'], item['solution-length']//10)"
+  property_reward: "math.log(1+item['maximum-path-length'])"
+  cluster_key: "(item['walls']//10, item['maximum-path-length']//5)"
   cluster_threshold:
-    !tup [3, 3]: 1
-    !tup [4, 4]: 1
-    !tup [5, 5]: 1
-    !tup [6, 6]: 2
-    !tup [7, 7]: 2
+    !tup [4, 4]: 2
+    !tup [4, 8]: 2
+    !tup [8, 4]: 2
+    !tup [8, 8]: 2
+    !tup [8,14]: 2
+    !tup [14,8]: 2
+    !tup [14,14]: 2
 
 condition_model_config: !obj:methods.ms_conditions/KDEConditionModel.Config
   noise_factors:
-    pushed-crate-ratio: !tup [-2, 4]
-    difficulty: !tup [-10, 20]
+    wall-ratio: !tup [-4, 4]
+    maximum-path-length-norm: !tup [-10, 20]
   diversity_sampling: true
-  cluster_key: "(item['pushed-crates'], item['solution-length']//10)"
+  cluster_key: "(item['walls']//10, item['maximum-path-length']//5)"
   cluster_threshold:
-    !tup [3, 3]: 1
-    !tup [4, 4]: 1
-    !tup [5, 5]: 1
-    !tup [6, 6]: 2
-    !tup [7, 7]: 2
+    !tup [3, 4]: 2
+    !tup [3, 6]: 2
+    !tup [5, 4]: 2
+    !tup [5, 6]: 2
+    !tup [5,11]: 2
+    !tup [7, 6]: 2
+    !tup [7,11]: 2
 
 generator_config: !inc "configs/models/snake_ms_ce_gru.yml"
 

@@ -64,7 +64,7 @@ class Zelda(Game):
             
             counter = Counter(tile for row in level for tile in row)
             result["walls"] = walls = counter[1]
-            result["wall_ratio"] = walls / area
+            result["wall-ratio"] = walls / area
             result["keys"] = keys = counter[2]
             result["doors"] = doors = counter[3]
             result["players"] = players = counter[4]
@@ -105,10 +105,10 @@ class Zelda(Game):
                 result["solvable"] = solvable = (farthest_enemy_distance <= area) and player_to_key_distance is not None and key_to_door_distance is not None
                 if solvable:
                     path_length = player_to_key_distance + key_to_door_distance
-                    result["path_length"] = path_length
+                    result["path-length"] = path_length
                     result["path-length-norm"] = path_length / area
                 else:
-                    result["path_length"] = -1
+                    result["path-length"] = -1
                     result["path-length-norm"] = -1
             else:
                 result["solvable"] = False
@@ -137,6 +137,13 @@ class ZeldaConditionUtility(ConditionUtility):
                 return self.mul(self.clamp(self.round(self.mul(x, self.const(area))), self.const(0), self.const(area-4)), self.const(1/area))
             return snap if size is None else (lambda x: snap(x, size))
         
+        if prop_name == "enemies-ratio":
+            def snap(x: float, size: Tuple[int, int]):
+                h, w = size
+                area = h*w
+                return self.mul(self.clamp(self.round(self.mul(x, self.const(area))), self.const(1), self.const(max(h, w))), self.const(1/area))
+            return snap if size is None else (lambda x: snap(x, size))
+        
         if prop_name == "nearest-enemy-distance-norm":
             def snap(x: float, size: Tuple[int, int]):
                 h, w = size
@@ -152,7 +159,7 @@ class ZeldaConditionUtility(ConditionUtility):
         if prop_name == "path-length-norm":
             return 0.5/(h*w)
         
-        if prop_name == "wall-ratio":
+        if prop_name == "wall-ratio" or prop_name == "enemies-ratio":
             return 0.5/(h*w)
 
         if prop_name == "nearest-enemy-distance-norm":
@@ -170,6 +177,10 @@ class ZeldaConditionUtility(ConditionUtility):
         if prop_name == "wall-ratio":
             area = h*w
             return 0.0, (area-4)/area
+        
+        if prop_name == "enemies-ratio":
+            area = h*w
+            return 1/(h*w), max(h, w)/area
 
         if prop_name == "nearest-enemy-distance-norm":
             area = h*w

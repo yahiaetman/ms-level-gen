@@ -1,0 +1,34 @@
+controlled_conditions:
+  enemies:
+    tolerence:
+      !tup [3, 4]: 2
+      !tup [3, 6]: 2
+      !tup [5, 4]: 2
+      !tup [5, 6]: 2
+      !tup [5,11]: 2
+      !tup [7, 6]: 2
+      !tup [7,11]: 2
+      !tup [8,12]: 2
+      !tup [9,13]: 2
+  nearest-enemy-distance:
+    tolerence:
+      !tup [3, 4]: 3
+      !tup [3, 6]: 3
+      !tup [5, 4]: 3
+      !tup [5, 6]: 3
+      !tup [5,11]: 3
+      !tup [7, 6]: 3
+      !tup [7,11]: 3
+      !tup [8,12]: 3
+      !tup [9,13]: 3
+  path-length:
+    tolerence:
+      !tup [3, 4]: 5
+      !tup [3, 6]: 5
+      !tup [5, 4]: 5
+      !tup [5, 6]: 5
+      !tup [5,11]: 5
+      !tup [7, 6]: 5
+      !tup [7,11]: 5
+      !tup [8,12]: 5
+      !tup [9,13]: 5

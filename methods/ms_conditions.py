@@ -2,7 +2,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import reduce
-import random
+import random, math
 from typing import Any, Dict, List, Optional, Tuple, Type
 import warnings
 
@@ -89,6 +89,7 @@ class KDEConditionModel(ConditionModel):
                 return self.config.cluster_threshold[closest_size]
 
     def update(self, size: Tuple[int, int], new_info: List[dict]):
+        if len(new_info) == 0: return
         items = self.items[size]
         clusters = self.clusters[size]
 
@@ -97,6 +98,8 @@ class KDEConditionModel(ConditionModel):
         if size not in self.noise:
             tolerence = torch.tensor([self.condition_utility.get_tolerence(name, size) for name in self.conditions])
             noise_min_factor, noise_max_factor = zip(*[self.config.noise_factors.get(name, (-2, 2)) for name in self.conditions])
+            noise_min_factor = torch.tensor(noise_min_factor, dtype=torch.float)
+            noise_max_factor = torch.tensor(noise_max_factor, dtype=torch.float)
             self.noise[size] = (noise_min_factor * tolerence, noise_max_factor * tolerence)
 
         for info in new_info:
@@ -120,7 +123,7 @@ class KDEConditionModel(ConditionModel):
             if bounds is None:
                 bounds = tuple(
                     torch.tensor(bound) 
-                    for bound in zip(*(self.condition_utility.get_range_estimates(name, size) for name in conditions))
+                    for bound in zip(*(self.condition_utility.get_range_estimates(name, size) for name in self.conditions))
                 )
                 self.range_estimates[size] = bounds
             conditions = torch.lerp(*bounds, torch.rand((batch_size, condition_size)))

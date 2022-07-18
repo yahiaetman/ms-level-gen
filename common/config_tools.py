@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Union
 import yaml
 import dataclasses
+import pathlib
 import argparse
 
 ###################################
@@ -103,7 +104,13 @@ def __obj_cons(loader: yaml.Loader, suffix: str, node: yaml.Node):
     return obj
 
 def __inc_cons(loader: yaml.Loader, node: yaml.Node):
-    url = loader.construct_python_str(node)
+    url: str = loader.construct_python_str(node).strip()
+    if url.startswith("~/") or url.startswith("~\\"):
+        url = url[2:].strip()
+        stream = loader.stream
+        stream_url = getattr(stream, "name", None)
+        if stream_url is not None:
+            url = str(pathlib.Path(stream_url).parent.joinpath(url))
     return yaml.unsafe_load(open(url, 'r'))
 
 def register():
@@ -168,10 +175,9 @@ def add_config_arguments(parser: argparse.ArgumentParser, config_file_args = Non
     config_file_args = config_file_args or ['-cfg', '--config']
     override_args = override_args or ['-ovr', '--override']
     parser.add_argument(*config_file_args, nargs='+', default=[])
-    parser.add_argument(*override_args, nargs='*', action='store', default=None)
+    parser.add_argument(*override_args, nargs='*', default=None)
 
 def get_config_from_namespace(args: argparse.Namespace):
-    
     config_files = args.config
     configs = [c for config_file in config_files for c in yaml.unsafe_load_all(open(config_file, 'r'))]
     if configs:
