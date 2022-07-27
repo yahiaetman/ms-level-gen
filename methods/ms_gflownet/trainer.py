@@ -93,6 +93,7 @@ class Trainer:
         batch_size = self.config.batch_size
 
         self.writer = tensorboard.writer.SummaryWriter(log_dir=self.log_path, purge_step=self.starting_step)
+        print(f"\033[1mTensorboard Command: \033[4m\033[92mtensorboard --logdir {self.log_path}\033[0m")
 
         self.optG.train()
 

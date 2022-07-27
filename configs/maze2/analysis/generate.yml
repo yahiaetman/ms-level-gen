@@ -1,0 +1,12 @@
+generation_sizes:
+  - !tup [4, 4]
+  - !tup [4, 8]
+  - !tup [8, 4]
+  - !tup [8, 8]
+  - !tup [14, 8]
+  - !tup [8, 14]
+  - !tup [14, 14]
+  - !tup [20, 14]
+  - !tup [20, 20]
+generation_amount: 10000
+trials: 1

@@ -1,0 +1,40 @@
+generation_sizes:
+  - !tup [3, 4]
+  - !tup [3, 6]
+  - !tup [5, 4]
+  - !tup [5, 6]
+  - !tup [5, 11]
+  - !tup [7, 6]
+  - !tup [7, 11]
+  - !tup [8, 12]
+  - !tup [9, 13]
+controlled_conditions:
+- control_name: "waits"
+  condition: "waits-norm"
+  mapping: "value/(size[0] * size[1])"
+  amount_per_pin: 1000
+  values:
+    !tup [3, 4]: !range [1, 4]
+    !tup [3, 6]: !range [1, 6]
+    !tup [5, 4]: !range [1, 5]
+    !tup [5, 6]: !range [1, 6]
+    !tup [5,11]: !range [1,11]
+    !tup [7, 6]: !range [1, 6]
+    !tup [7,11]: !range [1,11]
+    !tup [8,12]: !range [1,12]
+    !tup [9,13]: !range [1,13]
+- control_name: "solution-length"
+  condition: "difficulty"
+  mapping: "value/(size[0] * size[1])"
+  amount_per_pin: 100
+  values:
+    !tup [3, 4]: !range [1, 6]
+    !tup [3, 6]: !range [1, 9]
+    !tup [5, 4]: !range [1,10]
+    !tup [5, 6]: !range [1,15]
+    !tup [5,11]: !range [1,25]
+    !tup [7, 6]: !range [1,21]
+    !tup [7,11]: !range [1,38]
+    !tup [8,12]: !range [1,48]
+    !tup [9,13]: !range [1,58]
+trials: 1

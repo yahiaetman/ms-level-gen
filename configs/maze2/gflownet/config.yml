@@ -3,7 +3,8 @@ game_config: !inc "~/../game.yml"
 
 conditions:
   - "wall-ratio"
-  - "maximum-path-length-norm"
+  - "solution-length-norm"
+  - "explored-ratio"
 
 sizes:
   - !tup [4, 4]
@@ -18,10 +19,10 @@ dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
   data_augmentation: false
   diversity_sampling: true
   diversity_reward: true
-  property_reward: "math.log(1+item['maximum-path-length'])"
-  cluster_key: "(item['walls']//10, item['maximum-path-length']//5)"
+  property_reward: "math.log(item['solution-length'] + item['explored'])"
+  cluster_key: &key "(item['explored']//max(*size), item['solution-length']//max(*size))"
   cluster_threshold:
-    !tup [4, 4]: 2
+    !tup [4, 4]: 1
     !tup [4, 8]: 2
     !tup [8, 4]: 2
     !tup [8, 8]: 2
@@ -32,11 +33,12 @@ dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
 condition_model_config: !obj:methods.ms_conditions/KDEConditionModel.Config
   noise_factors:
     wall-ratio: !tup [-4, 4]
-    maximum-path-length-norm: !tup [-10, 20]
+    solution-length-norm: !tup [-10, 20]
+    explored-ratio: !tup [-10, 20]
   diversity_sampling: true
-  cluster_key: "(item['walls']//10, item['maximum-path-length']//5)"
+  cluster_key: *key
   cluster_threshold:
-    !tup [4, 4]: 2
+    !tup [4, 4]: 1
     !tup [4, 8]: 2
     !tup [8, 4]: 2
     !tup [8, 8]: 2

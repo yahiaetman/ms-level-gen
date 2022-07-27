@@ -1,0 +1,9 @@
+!obj:common.heatmap/Heatmaps.Config
+labels: ["Pushed Crates", "Solution Length"]
+coordinates: ["item['pushed-crates']", "item['solution-length']"]
+bounds:
+  !tup [3, 3]: !tup [!tup [1, 5],  !tup [1, 27]]
+  !tup [4, 4]: !tup [!tup [1, 8], !tup [1, 48]]
+  !tup [5, 5]: !tup [!tup [1, 13], !tup [1, 75]]
+  !tup [3, 5]: !tup [!tup [1, 8], !tup [1, 48]]
+  !tup [5, 3]: !tup [!tup [1, 8], !tup [1, 48]]

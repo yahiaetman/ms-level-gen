@@ -1,0 +1,23 @@
+controlled_conditions:
+  walls:
+    tolerence:
+      !tup [4, 4]: 2
+      !tup [4, 8]: 2
+      !tup [8, 4]: 2
+      !tup [8, 8]: 2
+      !tup [14, 8]: 2
+      !tup [8, 14]: 2
+      !tup [14, 14]: 2
+      !tup [20, 14]: 2
+      !tup [20, 20]: 2
+  solution-length:
+    tolerence:
+      !tup [4, 4]: 10
+      !tup [4, 8]: 10
+      !tup [8, 4]: 10
+      !tup [8, 8]: 10
+      !tup [14, 8]: 10
+      !tup [8, 14]: 10
+      !tup [14, 14]: 10
+      !tup [20, 14]: 10
+      !tup [20, 20]: 10

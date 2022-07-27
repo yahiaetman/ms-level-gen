@@ -2,9 +2,8 @@
 game_config: !inc "~/../game.yml"
 
 conditions:
-  - "nearest-enemy-distance-norm"
-  - "path-length-norm"
-  - "enemies-ratio"
+  - "waits-norm"
+  - "difficulty"
 
 sizes:
   - !tup [3, 4]
@@ -16,13 +15,13 @@ sizes:
   - !tup [7, 11]
 
 dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
-  data_augmentation: true
+  data_augmentation: false
   diversity_sampling: true
   diversity_reward: true
-  property_reward: "math.log(item['path-length'])"
-  cluster_key: "(item['nearest-enemy-distance']//2, item['path-length']//5)"
+  property_reward: "math.log(item['solution-length'])"
+  cluster_key: "(item['waits'], item['solution-length']//5)"
   cluster_threshold:
-    !tup [3, 4]: 2
+    !tup [3, 4]: 1
     !tup [3, 6]: 2
     !tup [5, 4]: 2
     !tup [5, 6]: 2
@@ -32,13 +31,12 @@ dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
 
 condition_model_config: !obj:methods.ms_conditions/KDEConditionModel.Config
   noise_factors:
-    nearest-enemy-distance-norm: !tup [-5, 10]
-    path-length-norm: !tup [-10, 20]
-    enemies-ratio: !tup [-2, 4]
+    difficulty: !tup [-10, 20]
+    waits-norm: !tup [-2, 4]
   diversity_sampling: true
-  cluster_key: "(item['nearest-enemy-distance']//2, item['path-length']//5)"
+  cluster_key: "(item['waits'], item['solution-length']//5)"
   cluster_threshold:
-    !tup [3, 4]: 2
+    !tup [3, 4]: 1
     !tup [3, 6]: 2
     !tup [5, 4]: 2
     !tup [5, 6]: 2
@@ -50,7 +48,7 @@ generator_config: !inc "configs/models/snake_ms_ce_gru.yml"
 
 optimizer_config: !obj:methods.ms_gflownet.optimizers/GFlowMSTBOptimizer.Config {}
 
-training_steps: 2000
+training_steps: 10000
 batch_size: 32
 checkpoint_period: 1000
 

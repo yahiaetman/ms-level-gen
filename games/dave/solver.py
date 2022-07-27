@@ -1,8 +1,6 @@
 from collections import deque
 from typing import Optional
 
-
-
 class DaveSolver:
     action_ascii = 'rl.j'
 
@@ -110,7 +108,7 @@ class DaveSolver:
                 if (y, nx) not in open or (y, nx) in spikes:
                     continue
                 children.append((action, y, nx, air_time))
-            if (y+1, x) not in open: # check if on ground:
+            if (y+1, x) not in open and (y-1, x) in open: # check if on ground and no ceiling above:
                 children.append(('j', y, x, self.air_time))
             for action, y, x, air_time in children:
                 y, x, air_time = _apply_physics(y, x, air_time)

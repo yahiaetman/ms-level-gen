@@ -1,0 +1,11 @@
+!obj:common.heatmap/Heatmaps.Config
+labels: ["Explored", "Solution Length"]
+coordinates: ["item['explored']", "item['solution-length']"]
+bounds:
+  !tup [4, 4]: !tup [!tup [1, 16], !tup [1, 16]]
+  !tup [4, 8]: !tup [!tup [1, 32], !tup [1, 32]]
+  !tup [8, 4]: !tup [!tup [1, 32], !tup [1, 32]]
+  !tup [8, 8]: !tup [!tup [1, 64], !tup [1, 64]]
+  !tup [8,14]: !tup [!tup [1,122], !tup [1,122]]
+  !tup [14,8]: !tup [!tup [1,122], !tup [1,122]]
+  !tup [14,14]: !tup [!tup [1,196], !tup [1,196]]
