@@ -35,22 +35,34 @@ class Dave(Game):
             all_tiles = list(range(7)) 
             return [[random.choices(all_tiles, all_tiles_weights, k=w) for _ in range(h)] for _ in range(level_count)]
         elif mode == "compilable":
+            h, w = size
             diamonds = diamonds or max(w, h)
             spikes = spikes or (max(w, h) - 1)
             levels = []
             for _ in range(level_count):
                 diamond_count = random.randint(1, diamonds)
                 spike_count = random.randint(spikes, (h*w)//2)
+                
                 locations = {(j,i) for j in range(h) for i in range(w)}
-                diamond_locations = set(random.sample(list(locations), diamond_count))
-                locations -= diamond_locations
-                spike_locations = set(random.sample(list(locations), spike_count))
-                locations -= spike_locations
-                player_location, key_location, door_location = random.sample(list(locations), 3)
+                
+                player_location = random.choice(list(locations))
                 locations.remove(player_location)
+                stand_location = (player_location[0]+1, player_location[1])
+                if stand_location in locations: locations.remove(stand_location)
+                
+                key_location, door_location = random.sample(list(locations), 2)
                 locations.remove(key_location)
                 locations.remove(door_location)
+                
+                diamond_locations = set(random.sample(list(locations), min(len(locations)-1, diamond_count)))
+                locations -= diamond_locations
+                
+                spike_locations = set(random.sample(list(locations), min(len(locations), spike_count)))
+                locations -= spike_locations
+                
                 wall_locations = set(random.sample(list(locations), random.randint(0, len(locations))))
+                wall_locations.add(stand_location)
+                
                 def tile(location):
                     if location in wall_locations: return 1
                     if location == key_location: return 2
@@ -164,9 +176,8 @@ class DaveConditionUtility(ConditionUtility):
             def snap(x: float, size: Tuple[int, int]):
                 h, w = size
                 area = h*w
-                spikes_min = (w - 1) * (h // 2) // 3
-                spikes_max = (w - 1) * (h // 2)
-                return self.mul(self.clamp(self.round(self.mul(x, self.const(area))), self.const(spikes_min), self.const(spikes_max)), self.const(1/area))
+                spikes_max = int((w - 1) * (h / 2))
+                return self.mul(self.clamp(self.round(self.mul(x, self.const(area))), self.const(0), self.const(spikes_max)), self.const(1/area))
             return snap if size is None else (lambda x: snap(x, size))
         
         if prop_name == "jump-ratio":
@@ -207,7 +218,7 @@ class DaveConditionUtility(ConditionUtility):
         
         if prop_name == "spikes-ratio":
             area = h*w
-            return ((w - 1) * (h // 2) // 3)/area, (area-3)/area
+            return 0, (area-3)/area
 
         if prop_name == "jump-ratio":
             area = h*w

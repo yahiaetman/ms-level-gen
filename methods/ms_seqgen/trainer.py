@@ -40,6 +40,7 @@ class Trainer:
         heatmap_config: Optional[Heatmaps.Config] = None
         heatmap_render_period: int = 100
         save_path: Optional[str] = None
+        name_suffix: Optional[str] = None
 
         def create_trainer(self):
             return Trainer(self)
@@ -51,7 +52,7 @@ class Trainer:
         self.dataset = Dataset(self.game, config.conditions, config.sizes, config.dataset_config)
         self.condition_model: ConditionModel = config.condition_model_config.model_constructor(self.game, config.conditions)
         self.netG: SeqMSGenerator = config.generator_config.model_constructor(len(self.game.tiles), len(config.conditions)).to(self.device)
-        self.optG = SeqMSOptimizer(self.netG, config.sizes, config.optimizer_config)
+        self.optG = SeqMSOptimizer(self.netG, config.optimizer_config)
         self.config = config
 
         self.heatmap = None
@@ -59,6 +60,8 @@ class Trainer:
             self.heatmap = Heatmaps(config.heatmap_config)
         
         self.name = f"{self.game.name}_{self.dataset.name}_{self.condition_model.name}_{self.netG.name}"
+        if config.name_suffix is not None:
+            self.name += f"_{config.name_suffix}"
 
         save_path = self.config.save_path or "./runs/%TIME_%NAME"
         save_path = save_path.replace("%TIME", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
@@ -127,16 +130,16 @@ class Trainer:
             augment_dataset = (step % self.config.bootstrapping_period) == 0
             for size in self.dataset.sizes:
 
-                pbar.set_description(f"{size}: Sample Batch")
+                pbar.set_description(f"{size}: Sample Batch.....")
                 batch = self.dataset.sample(size, batch_size)
                 if batch is not None:
                     levels, conditions = batch
-                    pbar.set_description(f"{size}: Train....")
+                    pbar.set_description(f"{size}: Train............")
                     loss = self.optG.step(conditions.to(self.device), levels.to(self.device))
                     self.writer.add_scalar(f"Training/Loss_{size}", loss, step)
                 
                 if augment_dataset:
-                    pbar.set_description(f"{size}: Query Conditions...")
+                    pbar.set_description(f"{size}: Query Conditions.")
                     query_conditions = self.condition_model.sample(size, batch_size)
                     
                     pbar.set_description(f"{size}: Query Levels.....")
@@ -145,13 +148,13 @@ class Trainer:
                     if step%self.config.sample_render_period == 0:
                         self.writer.add_images(f"Sample/Levels_{size}", self.game.render(levels.cpu().numpy()), step)
                     
-                    pbar.set_description(f"{size}: Update Dataset.....")
+                    pbar.set_description(f"{size}: Update Dataset...")
                     info, added_mask, stats  = self.dataset.analyze_and_update(size, levels.tolist(), query_conditions)
 
                     if self.heatmap is not None:
                         self.heatmap.update(size, info)
                 
-                    pbar.set_description(f"{size}: Update Cond-Model..")
+                    pbar.set_description(f"{size}: Update Cond-Model")
                     self.condition_model.update(size, [item for item, is_added in zip(info, added_mask) if is_added])
 
                     self.writer.add_scalars(f"Generation/Quality_{size}", stats, step)

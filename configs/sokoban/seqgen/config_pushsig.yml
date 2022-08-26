@@ -1,4 +1,4 @@
-!obj:methods.ms_gflownet.trainer/Trainer.Config
+!obj:methods.ms_seqgen.trainer/Trainer.Config
 game_config: !inc "~/../game.yml"
 
 conditions:
@@ -12,12 +12,13 @@ sizes:
   - !tup [6, 6]
   - !tup [7, 7]
 
-dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
+dataset_seed_path: "./datasets/sokoban/all_3x3.txt"
+dataset_postprocessing: []
+
+dataset_config: !obj:methods.ms_seqgen.dataset/Dataset.Config
   data_augmentation: true
   diversity_sampling: true
-  diversity_reward: true
-  property_reward: "math.log(item['solution-length'])"
-  cluster_key: &key "(item['pushed-crates'], item['solution-length']//sum(size))"
+  cluster_key: &key "tuple(item['push-signature'])"
   cluster_threshold:
     !tup [3, 3]: 1
     !tup [4, 4]: 1
@@ -38,13 +39,20 @@ condition_model_config: !obj:methods.ms_conditions/KDEConditionModel.Config
     !tup [6, 6]: 2
     !tup [7, 7]: 2
 
-generator_config: !inc "configs/models/snake_ms_ce_gru.yml"
+generator_config: !obj:methods.ms_seqgen.models/SnakeMSCEGen.Config
+  cell_type: "GRU"
+  layer_count: 2
+  layer_size: 128
+  embedding_size: 32
 
-optimizer_config: !obj:methods.ms_gflownet.optimizers/GFlowMSTBOptimizer.Config {}
+optimizer_config: !obj:methods.ms_seqgen.optimizers/SeqMSOptimizer.Config {}
 
 training_steps: 10000
 batch_size: 32
+bootstrapping_period: 1
+bootstrapping_batch_size: 32
 checkpoint_period: 1000
 
 heatmap_config: !inc "~/..//heatmap.yml"
 heatmap_render_period: 100
+name_suffix: "PUSHSIG"

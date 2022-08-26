@@ -20,7 +20,7 @@ dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
   diversity_sampling: true
   diversity_reward: true
   property_reward: "math.log(item['path-length'])"
-  cluster_key: "(item['nearest-enemy-distance']//2, item['path-length']//5)"
+  cluster_key: &key "(item['nearest-enemy-distance']//(sum(size)//2), item['path-length']//(sum(size)//2))"
   cluster_threshold:
     !tup [3, 4]: 2
     !tup [3, 6]: 2
@@ -32,11 +32,11 @@ dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
 
 condition_model_config: !obj:methods.ms_conditions/KDEConditionModel.Config
   noise_factors:
-    nearest-enemy-distance-norm: !tup [-5, 10]
-    path-length-norm: !tup [-10, 20]
-    enemies-ratio: !tup [-2, 4]
+    nearest-enemy-distance-norm: !tup [-2, 5]
+    path-length-norm: !tup [-5, 10]
+    enemies-ratio: !tup [-1, 2]
   diversity_sampling: true
-  cluster_key: "(item['nearest-enemy-distance']//2, item['path-length']//5)"
+  cluster_key: *key
   cluster_threshold:
     !tup [3, 4]: 2
     !tup [3, 6]: 2
@@ -50,7 +50,7 @@ generator_config: !inc "configs/models/snake_ms_ce_gru.yml"
 
 optimizer_config: !obj:methods.ms_gflownet.optimizers/GFlowMSTBOptimizer.Config {}
 
-training_steps: 2000
+training_steps: 10000
 batch_size: 32
 checkpoint_period: 1000
 

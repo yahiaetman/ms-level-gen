@@ -7,16 +7,23 @@ import matplotlib.pyplot as plt
 
 from common.config_tools import config
 
+# Given a string for an expression that requires a size,
+# wraps it in a lambda with the size as an argument then call it with the given size
+# This is useful to convert an expression that requires a size into one that does not require it
 def wrap_with_size(size: Tuple[int, int], fn: str):
     return f"(lambda size: {fn})({size})"
 
+# This class represents a heatmap for a given set of levels
+# The update function adds more levels to the heatmap
+# The render function draws the heatmap as a matplotlib figure
 class Heatmap:
     @config
     @dataclass
     class Config:
-        labels: Tuple[str, str]
-        coordinates: Tuple[str, str]
-        bounds: Tuple[Tuple[int, int], Tuple[int, int]]
+        labels: Tuple[str, str]                         # The labels of the y and x axes
+        coordinates: Tuple[str, str]                    # The expression for the y and x values for a given level
+        bounds: Tuple[Tuple[int, int], Tuple[int, int]] # The minimum and maximum bounds for the heatmap on the y and x axes
+                                                        # The data represents ((y_min, y_max), (x_min, x_max))
     
     def __init__(self, config: Heatmap.Config) -> None:
         self.labels = config.labels
@@ -26,28 +33,36 @@ class Heatmap:
         (y_min, y_max), (x_min, x_max) = config.bounds
         h, w = (y_max - y_min + 1), (x_max - x_min + 1)
 
-        self.frequency_map = np.zeros((h, w), dtype=int)
+        self.items = [[[] for _ in range(w)] for _ in range(h)]
         self.bounds = config.bounds
     
+    # Add levels to the heatmap. Only solvable levels are added. 
     def update(self, info: List[Dict]):
-        frequency_map = self.frequency_map
+        items = self.items
         (y_min, y_max), (x_min, x_max) = self.bounds
         for item in info:
             if not item["solvable"]: continue
             y = min(max(self.y_fn(item), y_min), y_max) - y_min
             x = min(max(self.x_fn(item), x_min), x_max) - x_min
-            frequency_map[y, x] += 1
+            items[y][x].append(item)
 
-    def render(self):
-        frequency_map = self.frequency_map
+    # render the heatmap where the value is specified by the "stat_fn" and
+    # the mask (if true, the cell is skipped) is specified by the "mask_fn"
+    def render(self, stat_fn = len, mask_fn = (lambda l: len(l) == 0)):
+        items = self.items
         (y_min, _), (x_min, _) = self.bounds
         
-        mask = frequency_map == 0
-        v_min = 1
-        v_max = max(1, frequency_map.max())
+        stat = np.array([[stat_fn(cell) for cell in row] for row in items])
+        mask = np.array([[mask_fn(cell) for cell in row] for row in items], dtype=bool)
+        masked: np.ndarray = stat[~mask]
+        if masked.size > 0:
+            v_min = masked.min()
+            v_max = masked.max()
+        else:
+            v_min, v_max = 0, 0
 
         fig = plt.figure()
-        ax = sns.heatmap(frequency_map, mask=mask, vmin=v_min, vmax=v_max, rasterized=True)
+        ax = sns.heatmap(stat, mask=mask, vmin=v_min, vmax=v_max, rasterized=True)
         #ax.xaxis.set_ticks_position('top')
         ax.invert_yaxis()
         font_size = 6
@@ -61,21 +76,27 @@ class Heatmap:
         
         return fig
 
+# This class represents a set of heatmap for a given set of levels of multiple sizes
+# The update function adds more levels to the heatmap of the corresponding size 
+# The render function draws a heatmap as a matplotlib figure
 class Heatmaps:
     @config
     @dataclass
     class Config:
-        labels: Tuple[str, str]
-        coordinates: Tuple[str, str]
-        bounds: Dict[Tuple[int, int], Tuple[Tuple[int, int], Tuple[int, int]]]
+        labels: Tuple[str, str]                                                 # The labels of the y and x axes
+        coordinates: Tuple[str, str]                                            # The expression for the y and x values for a given level
+        bounds: Dict[Tuple[int, int], Tuple[Tuple[int, int], Tuple[int, int]]]  # The minimum and maximum bounds for each heatmap on the y and x axes
+                                                                                # The data represents {size: ((y_min, y_max), (x_min, x_max))}
 
     def __init__(self, config: Heatmaps.Config) -> None:
         self.config = config 
         self.heatmaps: Dict[Tuple[int, int], Heatmap] = {}
     
     def __getitem__(self, size: Tuple[int, int]) -> Heatmap:
+        # The heatmap is lazily constructed when first requested
         heatmap = self.heatmaps.get(size)
         if heatmap is None:
+            # If the configuration does not contain information about the heatmap bounds, the nearest size found is picked
             bounds = self.config.bounds.get(size)
             if bounds is None:
                 h, w = size
@@ -84,14 +105,18 @@ class Heatmaps:
             heatmap = Heatmap(Heatmap.Config(self.config.labels, coordinates, bounds))
             self.heatmaps[size] = heatmap
         return heatmap
-        
+    
+    # Added levels to the heatmap specified by the given size
     def update(self, size: Tuple[int, int], info: List[Dict]):
         heatmap = self[size]
         heatmap.update(info)
         
-    def render(self, size: Tuple[int, int]):
-        return self[size].render()
+    # Render the heatmap for the given size where the value is specified by the "stat_fn" and
+    # the mask (if true, the cell is skipped) is specified by the "mask_fn"
+    def render(self, size: Tuple[int, int], stat_fn = len, mask_fn = (lambda l: len(l) == 0)):
+        return self[size].render(stat_fn, mask_fn)
 
-    def render_all(self):
-        return {size:heatmap.render() for size, heatmap in self.heatmaps.items()}
+    # Render all the heatmaps (if the heatmap was not requested before, it will not be available in the results of this function)
+    def render_all(self, stat_fn = len, mask_fn = (lambda l: len(l) == 0)):
+        return {size:heatmap.render(stat_fn, mask_fn) for size, heatmap in self.heatmaps.items()}
 

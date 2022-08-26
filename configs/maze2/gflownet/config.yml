@@ -32,9 +32,9 @@ dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
 
 condition_model_config: !obj:methods.ms_conditions/KDEConditionModel.Config
   noise_factors:
-    wall-ratio: !tup [-4, 4]
-    solution-length-norm: !tup [-10, 20]
-    explored-ratio: !tup [-10, 20]
+    wall-ratio: !tup [-2, 2]
+    solution-length-norm: !tup [-5, 10]
+    explored-ratio: !tup [-5, 10]
   diversity_sampling: true
   cluster_key: *key
   cluster_threshold:

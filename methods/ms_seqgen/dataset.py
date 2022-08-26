@@ -130,7 +130,7 @@ class Dataset:
                 cluster = random.choice(clusters)
                 item = items[random.choice(cluster)] 
             else:
-                item = random.choice(item)
+                item = random.choice(items)
             levels[index] = random.choice(item.variants)
             conditions[index] = item.conditions
         return levels, conditions

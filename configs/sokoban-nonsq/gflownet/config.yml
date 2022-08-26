@@ -27,8 +27,8 @@ dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
 
 condition_model_config: !obj:methods.ms_conditions/KDEConditionModel.Config
   noise_factors:
-    pushed-crate-ratio: !tup [-2, 4]
-    difficulty: !tup [-10, 20]
+    pushed-crate-ratio: !tup [-1, 1]
+    difficulty: !tup [-5, 10]
   diversity_sampling: true
   cluster_key: *key
   cluster_threshold:

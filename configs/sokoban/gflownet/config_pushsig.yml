@@ -13,11 +13,10 @@ sizes:
   - !tup [7, 7]
 
 dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
-  data_augmentation: true
+  data_augmentation: false
   diversity_sampling: true
   diversity_reward: true
-  property_reward: "math.log(item['solution-length'])"
-  cluster_key: &key "(item['pushed-crates'], item['solution-length']//sum(size))"
+  cluster_key: &key "tuple(item['push-signature'])"
   cluster_threshold:
     !tup [3, 3]: 1
     !tup [4, 4]: 1
@@ -48,3 +47,4 @@ checkpoint_period: 1000
 
 heatmap_config: !inc "~/..//heatmap.yml"
 heatmap_render_period: 100
+name_suffix: "PUSHSIG"

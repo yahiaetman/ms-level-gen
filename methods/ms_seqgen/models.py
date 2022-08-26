@@ -48,7 +48,7 @@ class SnakeMSCEGen(SeqMSGenerator):
     def __init__(self, tile_count: int, condition_size: int, config: Optional[SnakeMSCEGen] = None) -> None:
         super().__init__(tile_count, condition_size)
         self.config = config or SnakeMSCEGen.Config()
-        self.name = "AUTOREG_SNAKE_MSCE" + self.config.cell_type.upper() + "_GEN"
+        self.name = "SEQGEN_SNAKE_MSCE" + self.config.cell_type.upper() + "_GEN"
         
         self.conditional_embedding = feedforward(
             condition_size + 2, 

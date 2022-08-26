@@ -37,6 +37,7 @@ class Trainer:
         heatmap_config: Optional[Heatmaps.Config] = None
         heatmap_render_period: int = 100
         save_path: Optional[str] = None
+        name_suffix: Optional[str] = None
 
         def create_trainer(self):
             return Trainer(self)
@@ -56,6 +57,8 @@ class Trainer:
             self.heatmap = Heatmaps(config.heatmap_config)
         
         self.name = f"{self.game.name}_{self.dataset.name}_{self.condition_model.name}_{self.netG.name}"
+        if config.name_suffix is not None:
+            self.name += f"_{config.name_suffix}"
 
         save_path = self.config.save_path or "./runs/%TIME_%NAME"
         save_path = save_path.replace("%TIME", datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))

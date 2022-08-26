@@ -47,8 +47,8 @@ class DaveSolver:
             return False
         if not(0 < len(self.diamonds) <= max(self.w, self.h)):
             return False
-        k = (self.w - 1) * (self.h // 2)
-        if not(k // 3 <= len(self.spikes) <= k):
+        k = int((self.w - 1) * (self.h / 2))
+        if len(self.spikes) > k:
             return False
         return True
 

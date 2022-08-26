@@ -35,6 +35,7 @@ class Zelda(Game):
             all_tiles = list(range(len(self.tiles)))
             return [[random.choices(all_tiles, all_tiles_weights, k=w) for _ in range(h)] for _ in range(level_count)]
         elif mode == "compilable":
+            h, w = size
             enemies = enemies or max(w, h)
             levels = []
             for _ in range(level_count):

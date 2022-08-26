@@ -37,7 +37,7 @@ class Dataset:
         name = ""
         if self.config.diversity_sampling: name += "DIVS_"
         if self.config.diversity_reward: name += "DIVR_"
-        if self.config.diversity_reward: name += "PREW_"
+        if self.config.property_reward is not None: name += "PREW_"
         if self.config.data_augmentation: name += "AUG_" 
         self.name = name + "DATASET"
 
@@ -181,7 +181,7 @@ class Dataset:
                 cluster = random.choice(clusters)
                 item = items[random.choice(cluster)] 
             else:
-                item = random.choice(item)
+                item = random.choice(items)
             levels[index] = random.choice(item.variants)
             conditions[index] = item.conditions
             log_reward = item.property_log_reward

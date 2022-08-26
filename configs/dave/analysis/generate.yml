@@ -6,6 +6,8 @@ generation_sizes:
   - !tup [5, 11]
   - !tup [7, 6]
   - !tup [7, 11]
+  - !tup [6, 10]
+  - !tup [10, 6]
   - !tup [8, 12]
   - !tup [9, 13]
 generation_amount: 10000

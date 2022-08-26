@@ -31,8 +31,8 @@ dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
 
 condition_model_config: !obj:methods.ms_conditions/KDEConditionModel.Config
   noise_factors:
-    difficulty: !tup [-10, 20]
-    waits-norm: !tup [-2, 4]
+    difficulty: !tup [-5, 10]
+    waits-norm: !tup [-1, 2]
   diversity_sampling: true
   cluster_key: "(item['waits'], item['solution-length']//5)"
   cluster_threshold:

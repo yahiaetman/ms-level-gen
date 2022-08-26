@@ -96,11 +96,11 @@ class KDEConditionModel(ConditionModel):
         if size not in self.cluster_thresholds:
             self.cluster_thresholds[size] = self.compute_cluster_threshold(size)
         if size not in self.noise:
-            tolerence = torch.tensor([self.condition_utility.get_tolerence(name, size) for name in self.conditions])
-            noise_min_factor, noise_max_factor = zip(*[self.config.noise_factors.get(name, (-2, 2)) for name in self.conditions])
+            delta = torch.tensor([2 * self.condition_utility.get_tolerence(name, size) for name in self.conditions])
+            noise_min_factor, noise_max_factor = zip(*[self.config.noise_factors.get(name, (-1, 1)) for name in self.conditions])
             noise_min_factor = torch.tensor(noise_min_factor, dtype=torch.float)
             noise_max_factor = torch.tensor(noise_max_factor, dtype=torch.float)
-            self.noise[size] = (noise_min_factor * tolerence, noise_max_factor * tolerence)
+            self.noise[size] = (noise_min_factor * delta, noise_max_factor * delta)
 
         for info in new_info:
             cluster_key = self.cluster_key(info, size)
@@ -137,7 +137,7 @@ class KDEConditionModel(ConditionModel):
                     cluster = random.choice(clusters)
                     item = items[random.choice(cluster)] 
                 else:
-                    item = random.choice(item)
+                    item = random.choice(items)
                 conditions[index] += item
         
         for index, snap_function in enumerate(self.snap_functions):
@@ -361,6 +361,9 @@ class GMMConditionModel(ControllableConditionModel):
             conditional_weights_sum = torch.sum(conditional_weights)
             if conditional_weights_sum != 0:
                 conditional_weights /= conditional_weights_sum
+            else:
+                # As a fallback, we use the original weights in this case
+                conditional_weights = weights
             u = means[:, random_indices] + torch.matmul(torch.matmul(Cab, Cbbinv), given_x_u[:,:,None])[:,:,0]
 
             # picked_comp = torch.multinomial(conditional_weights, batch_size, replacement=True)

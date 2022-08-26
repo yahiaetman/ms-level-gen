@@ -48,6 +48,7 @@ class Sokoban(Game):
             all_tiles = list(range(7)) 
             return [[random.choices(all_tiles, all_tiles_weights, k=w) for _ in range(h)] for _ in range(level_count)]
         elif mode == "compilable":
+            h, w = size
             crates = crates or max(w,h)
             levels = []
             for _ in range(level_count):

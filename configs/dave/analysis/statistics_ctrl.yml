@@ -7,6 +7,8 @@ controlled_conditions:
       !tup [5,11]: 2
       !tup [7, 6]: 2
       !tup [7,11]: 2
+      !tup [6,10]: 2
+      !tup [10,6]: 2
       !tup [8,12]: 2
       !tup [9,13]: 2
   jumps:
@@ -18,6 +20,8 @@ controlled_conditions:
       !tup [5,11]: 2
       !tup [7, 6]: 2
       !tup [7,11]: 2
+      !tup [6,10]: 2
+      !tup [10,6]: 2
       !tup [8,12]: 2
       !tup [9,13]: 2
   solution-length:
@@ -29,5 +33,7 @@ controlled_conditions:
       !tup [5,11]: 5
       !tup [7, 6]: 5
       !tup [7,11]: 5
+      !tup [6,10]: 5
+      !tup [10,6]: 5
       !tup [8,12]: 5
       !tup [9,13]: 5

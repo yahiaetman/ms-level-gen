@@ -18,7 +18,7 @@ class SeqMSOptimizer:
         self.name = "MSAR"
         self.device = netG.device
         self.netG = netG
-        self.optG = optim.RMSprop(netG.parameters(), self.config.policy_lr)
+        self.optG = optim.RMSprop(netG.parameters(), self.config.lr)
         
     def train(self):
         self.netG.train()

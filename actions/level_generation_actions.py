@@ -134,7 +134,7 @@ def action_generate_levels_controllable_ms(args: argparse.Namespace):
     
     if generator_path == "":
         training_config_path = utils.find_in_parents(weights_path, "config.yml")
-        assert training_config_path is not None, "The training configuation file is need to know the generator"
+        assert training_config_path is not None, "The training configuation file is needed to know the generator"
         training_config = config_tools.read_config_file(training_config_path)
     if generator_path == "":
         generator_config = training_config.generator_config
@@ -219,3 +219,66 @@ def register_generate_levels_controllable_ms(parser: argparse.ArgumentParser):
     parser.add_argument("-gen", "--generator", type=str, default="", help="path to the condition model file")
     config_tools.add_config_arguments(parser)
     parser.set_defaults(func=action_generate_levels_controllable_ms)
+
+################################################################################
+################################################################################
+
+def action_random_generate_levels_ms(args: argparse.Namespace):
+    import json, os, pathlib, yaml, time
+    from games import create_game
+
+    config_tools.register()
+    game_config_path: str = args.game
+    output_path: str = args.output
+    rng_mode = args.mode
+    config = config_tools.get_config_from_namespace(args)
+    
+    game = create_game(config_tools.read_config_file(game_config_path))
+    
+    generation_sizes = config.get("generation_sizes", [])
+    generation_amount = config.get("generation_amount", 10000)
+    trials = config.get("trials", 1)
+    prefix = config.get("prefix", "")
+    if prefix: prefix += "_"
+
+    pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
+
+    generation_stats = {}
+    for size_index, size in enumerate(generation_sizes):
+        h, w = size
+        print(f"{size_index+1}/{len(generation_sizes)}: Working on Size {h}x{w} ...")
+        results = []
+        found = 0
+        requests = 0
+        start_time = time.time()
+        for trial in range(1, trials+1):
+            remaining = generation_amount - len(results)
+            requests += remaining
+            levels = game.generate_random(remaining, size, mode=rng_mode)
+            info = game.analyze(levels)
+            solvable = [item for item in info if item["solvable"]]
+            found += len(solvable)
+            if trial == trials:
+                results.extend(info)
+            else:
+                results.extend(solvable)
+            print(f"Trial {trial}/{trials}: Progress = {found}/{generation_amount} levels")
+            if found == generation_amount:
+                break
+        elapsed_time = time.time() - start_time
+        print(f"Done in {elapsed_time} seconds ({trial} trials) using {requests} requests")
+        json.dump(results, open(os.path.join(output_path, f"{prefix}rnd_levels_{h}x{w}.json"), 'w'))
+        generation_stats[size] = {
+            "trials": trials,
+            "requests": requests,
+            "solvable": found,
+            "elapsed_seconds": elapsed_time
+        }
+    yaml.dump(generation_stats, open(os.path.join(output_path, f"{prefix}rnd_generation_stats.yml"), 'w'))
+
+def register_random_generate_levels_ms(parser: argparse.ArgumentParser):
+    parser.add_argument("game", type=str, help="path to the game configuration")
+    parser.add_argument("output", type=str, help="path to which the levels will be saved")
+    parser.add_argument("--mode", "-m", type=str, default="basic", help="the generator mode")
+    config_tools.add_config_arguments(parser)
+    parser.set_defaults(func=action_random_generate_levels_ms)

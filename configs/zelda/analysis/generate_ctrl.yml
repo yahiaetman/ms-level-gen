@@ -6,6 +6,8 @@ generation_sizes:
   - !tup [5, 11]
   - !tup [7, 6]
   - !tup [7, 11]
+  - !tup [6, 10]
+  - !tup [10, 6]
   - !tup [8, 12]
   - !tup [9, 13]
 controlled_conditions:
@@ -14,41 +16,47 @@ controlled_conditions:
   mapping: "value/(size[0] * size[1])"
   amount_per_pin: 1000
   values:
-    !tup [3, 4]: !range [1, 4]
-    !tup [3, 6]: !range [1, 6]
-    !tup [5, 4]: !range [1, 5]
-    !tup [5, 6]: !range [1, 6]
-    !tup [5,11]: !range [1,11]
-    !tup [7, 6]: !range [1, 6]
-    !tup [7,11]: !range [1,11]
-    !tup [8,12]: !range [1,12]
-    !tup [9,13]: !range [1,13]
+    !tup [3, 4]: !range [1, 5]
+    !tup [3, 6]: !range [1, 7]
+    !tup [5, 4]: !range [1, 6]
+    !tup [5, 6]: !range [1, 7]
+    !tup [5,11]: !range [1,12]
+    !tup [7, 6]: !range [1, 7]
+    !tup [7,11]: !range [1,12]
+    !tup [6,10]: !range [1,11]
+    !tup [10,6]: !range [1,11]
+    !tup [8,12]: !range [1,13]
+    !tup [9,13]: !range [1,14]
 - control_name: "nearest-enemy-distance"
   condition: "nearest-enemy-distance-norm"
   mapping: "value/(size[0] * size[1])"
   amount_per_pin: 100
   values:
-    !tup [3, 4]: !range [1, 6]
-    !tup [3, 6]: !range [1, 9]
-    !tup [5, 4]: !range [1,10]
-    !tup [5, 6]: !range [1,15]
-    !tup [5,11]: !range [1,25]
-    !tup [7, 6]: !range [1,21]
-    !tup [7,11]: !range [1,38]
-    !tup [8,12]: !range [1,48]
-    !tup [9,13]: !range [1,58]
+    !tup [3, 4]: !range [1, 7]
+    !tup [3, 6]: !range [1,10]
+    !tup [5, 4]: !range [1,11]
+    !tup [5, 6]: !range [1,16]
+    !tup [5,11]: !range [1,26]
+    !tup [7, 6]: !range [1,22]
+    !tup [7,11]: !range [1,39]
+    !tup [6,10]: !range [1,31]
+    !tup [10,6]: !range [1,31]
+    !tup [8,12]: !range [1,49]
+    !tup [9,13]: !range [1,59]
 - control_name: "path-length"
   condition: "path-length-norm"
   mapping: "value/(size[0] * size[1])"
   amount_per_pin: 100
   values:
-    !tup [3, 4]: !range [1, 6]
-    !tup [3, 6]: !range [1, 9]
-    !tup [5, 4]: !range [1,10]
-    !tup [5, 6]: !range [1,15]
-    !tup [5,11]: !range [1,25]
-    !tup [7, 6]: !range [1,21]
-    !tup [7,11]: !range [1,38]
-    !tup [8,12]: !range [1,48]
-    !tup [9,13]: !range [1,58]
+    !tup [3, 4]: !range [2, 13]
+    !tup [3, 6]: !range [2, 19]
+    !tup [5, 4]: !range [2, 21]
+    !tup [5, 6]: !range [2, 31]
+    !tup [5,11]: !range [2, 56]
+    !tup [7, 6]: !range [2, 43]
+    !tup [7,11]: !range [2, 78]
+    !tup [6,10]: !range [2, 61]
+    !tup [10,6]: !range [2, 61]
+    !tup [8,12]: !range [2, 97]
+    !tup [9,13]: !range [2,117]
 trials: 1
