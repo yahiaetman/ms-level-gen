@@ -1,13 +1,26 @@
 import argparse
 from common import config_tools
 
+#####################################
+#####################################
+'''
+Generate a condition model (Typically, a GMM) from the given level data.
+
+Arguments:
+    * A glob pattern for the level files to use for fitting the condition model.
+    * The path to which the condition model should be save (no extension since 
+        2 files with the extensions will be created: '.yaml' for the model config & '.pt' for the model data)
+    * -g, -game: a path to the game config. If not specified, a training config will be searched for in the levels' parents.
+    * -c, ---conditions: a path to the condition config. If not specified, a training config will be searched for in the levels' parents.
+    * -cfg & -ovr: The condition model configuration.
+'''
+
 def action_generate_condition_model_ms(args: argparse.Namespace):
     import json, pathlib, yaml, glob
     from collections import defaultdict
     from . import utils
     from games import create_game
     
-    config_tools.register()
     levels_glob_path: str = args.levels
     outputs_path: str = args.output
     game_path: str = args.game
@@ -23,8 +36,8 @@ def action_generate_condition_model_ms(args: argparse.Namespace):
 
     if conditions_path == "" or game_path == "":
         training_config_path = utils.find_in_parents(levels_glob_path, "config.yml")
-        assert training_config_path is not None, "The training configuation file is need to know the conditions and/or the game"
-        training_config = config_tools.read_config_file(training_config_path)
+        assert training_config_path is not None, "The training configuration file is needed to know the conditions and/or the game"
+        training_config = config_tools.read_config(training_config_path)
     if conditions_path == "":
         conditions = training_config.conditions
     else:

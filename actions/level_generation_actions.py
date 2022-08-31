@@ -1,13 +1,39 @@
 import argparse
 from common import config_tools
 
+#####################################
+#####################################
+'''
+Generate levels at multiple sizes from a pre-trained model 
+where the controls are sampled unconditionally from a condition model.
+
+Arguments:
+    * path to the model weights.
+    * path to the condition model (without extension).
+    * path to which the output will be written.
+    * -gen, --generator: path to the generator config. If not specified, a training config will be searched for in the weight's parents.
+    * -cfg & -ovr: The generation configuration.
+
+The generation configurations contains:
+- The sizes to generate at.
+- The number of levels to generate for each size.
+- The number of trials to generate a playable level before giving up. (Default: 1)
+- A prefix to add before the generated level's files names. (Default: "")
+
+This action checks if the generated levels are playable or not.
+If a generated level is unplayable, a replacement is requested in the next trial.
+
+The action writes a separate file for each level sizes named as follows: {prefix}_levels_{width}x{height}.json
+The files will not only store the level, they will also store all the information returned by the game during the analysis.
+In addition, a statistics file is saved to store the generation time, the number of playable levels generated, the number of requests needed, etc.
+'''
+
 def action_generate_levels_ms(args: argparse.Namespace):
     import json, os, pathlib, torch, yaml, time
     from games import create_game
     from . import utils
     from methods.generator import MSGenerator
 
-    config_tools.register()
     weights_path: str = args.weights
     condition_model_path: str = args.cm
     generator_path: str = args.generator
@@ -29,8 +55,8 @@ def action_generate_levels_ms(args: argparse.Namespace):
 
     if generator_path == "":
         training_config_path = utils.find_in_parents(weights_path, "config.yml")
-        assert training_config_path is not None, "The training configuation file is need to know the generator"
-        training_config = config_tools.read_config_file(training_config_path)
+        assert training_config_path is not None, "The training configuration file is needed to know the generator"
+        training_config = config_tools.read_config(training_config_path)
     if generator_path == "":
         generator_config = training_config.generator_config
     else:
@@ -39,7 +65,7 @@ def action_generate_levels_ms(args: argparse.Namespace):
     assert os.path.exists(condition_model_path + ".cm"), "The condition model file must exist"
     assert os.path.exists(condition_model_path + ".yml"), "The condition model config file must exist"
 
-    condition_model_config = config_tools.read_config_file(condition_model_path + ".yml")
+    condition_model_config = config_tools.read_config(condition_model_path + ".yml")
     
     game = create_game(condition_model_config["game_config"])
     conditions = condition_model_config["conditions"]
@@ -103,8 +129,33 @@ def register_generate_levels_ms(parser: argparse.ArgumentParser):
     config_tools.add_config_arguments(parser)
     parser.set_defaults(func=action_generate_levels_ms)
 
-############################################
-############################################
+#####################################
+#####################################
+'''
+Generate levels at multiple sizes from a pre-trained model 
+where the controls are sampled conditionally from a condition model given user-supplied controls.
+
+Arguments:
+    * path to the model weights.
+    * path to the condition model (without extension).
+    * path to which the output will be written.
+    * -gen, --generator: path to the generator config. If not specified, a training config will be searched for in the weight's parents.
+    * -cfg & -ovr: The generation configuration.
+
+The generation configurations contains for each requested control:
+- The control name and denomerator (as a function so for flexibility).
+- The sizes to generate at and the control range for each size.
+- The number of levels to generate for each size.
+- The number of trials to generate a playable level before giving up. (Default: 1)
+- A prefix to add before the generated level's files names. (Default: "")
+
+This action checks if the generated levels are playable or not.
+The best level across trials (nearest to the requested controls) is returned.
+
+The action writes a separate file for each level sizes named as follows: {prefix}_ctrl_levels_{width}x{height}.json
+The files will not only store the level, they will also store all the information returned by the game during the analysis.
+In addition, a statistics file is saved to store the generation time, the number of playable levels generated, the number of requests needed, etc.
+'''
 
 def action_generate_levels_controllable_ms(args: argparse.Namespace):
     import json, os, pathlib, torch, yaml, time, tqdm
@@ -113,7 +164,6 @@ def action_generate_levels_controllable_ms(args: argparse.Namespace):
     from methods.generator import MSGenerator
     from methods.ms_conditions import ControllableConditionModel
 
-    config_tools.register()
     weights_path: str = args.weights
     condition_model_path: str = args.cm
     generator_path: str = args.generator
@@ -134,8 +184,8 @@ def action_generate_levels_controllable_ms(args: argparse.Namespace):
     
     if generator_path == "":
         training_config_path = utils.find_in_parents(weights_path, "config.yml")
-        assert training_config_path is not None, "The training configuation file is needed to know the generator"
-        training_config = config_tools.read_config_file(training_config_path)
+        assert training_config_path is not None, "The training configuration file is needed to know the generator"
+        training_config = config_tools.read_config(training_config_path)
     if generator_path == "":
         generator_config = training_config.generator_config
     else:
@@ -144,7 +194,7 @@ def action_generate_levels_controllable_ms(args: argparse.Namespace):
     assert os.path.exists(condition_model_path + ".cm"), "The condition model file must exist"
     assert os.path.exists(condition_model_path + ".yml"), "The condition model config file must exist"
 
-    condition_model_config = config_tools.read_config_file(condition_model_path + ".yml")
+    condition_model_config = config_tools.read_config(condition_model_path + ".yml")
     
     game = create_game(condition_model_config["game_config"])
     conditions = condition_model_config["conditions"]
@@ -220,20 +270,41 @@ def register_generate_levels_controllable_ms(parser: argparse.ArgumentParser):
     config_tools.add_config_arguments(parser)
     parser.set_defaults(func=action_generate_levels_controllable_ms)
 
-################################################################################
-################################################################################
+#####################################
+#####################################
+'''
+Generate random levels at multiple sizes.
+
+Arguments:
+    * path to the game configuration.
+    * path to which the output will be written.
+    * -m, --mode: the random generator's mode (this depends on what is implemented for each game). (Default: "basic")
+    * -cfg & -ovr: The generation configuration.
+
+The generation configurations contains:
+- The sizes to generate at.
+- The number of levels to generate for each size.
+- The number of trials to generate a playable level before giving up. (Default: 1)
+- A prefix to add before the generated level's files names. (Default: "")
+
+This action checks if the generated levels are playable or not.
+If a generated level is unplayable, a replacement is requested in the next trial.
+
+The action writes a separate file for each level sizes named as follows: {prefix}_levels_{height}x{width}.json
+The files will not only store the level, they will also store all the information returned by the game during the analysis.
+In addition, a statistics file is saved to store the generation time, the number of playable levels generated, the number of requests needed, etc.
+'''
 
 def action_random_generate_levels_ms(args: argparse.Namespace):
     import json, os, pathlib, yaml, time
     from games import create_game
 
-    config_tools.register()
     game_config_path: str = args.game
     output_path: str = args.output
     rng_mode = args.mode
     config = config_tools.get_config_from_namespace(args)
     
-    game = create_game(config_tools.read_config_file(game_config_path))
+    game = create_game(config_tools.read_config(game_config_path))
     
     generation_sizes = config.get("generation_sizes", [])
     generation_amount = config.get("generation_amount", 10000)

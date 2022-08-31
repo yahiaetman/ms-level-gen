@@ -63,7 +63,6 @@ class Heatmap:
 
         fig = plt.figure()
         ax = sns.heatmap(stat, mask=mask, vmin=v_min, vmax=v_max, rasterized=True)
-        #ax.xaxis.set_ticks_position('top')
         ax.invert_yaxis()
         font_size = 6
         xticks, yticks = ax.get_xticks(), ax.get_yticks()

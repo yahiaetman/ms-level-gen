@@ -3,9 +3,14 @@ from common import config_tools
 
 #####################################
 #####################################
+'''
+Train a model from the scratch.
+
+Arguments:
+    * -cfg & -ovr: The training configuration.
+'''
 
 def train(args: argparse.Namespace):
-    config_tools.register()
     config = config_tools.get_config_from_namespace(args)
 
     trainer = config.create_trainer()
@@ -17,12 +22,17 @@ def register_train(parser: argparse.ArgumentParser):
 
 #####################################
 #####################################
+'''
+Resume training a model.
+
+Arguments:
+    * path to the folder containing the training config file and the checkpoints folder.
+'''
 
 def resume(args: argparse.Namespace):
-    import os, yaml
+    import os
 
-    config_tools.register()
-    config = yaml.unsafe_load(open(os.path.join(args.path, "config.yml"), 'r'))
+    config = config_tools.read_config(os.path.join(args.path, "config.yml"))
 
     trainer = config.create_trainer()
     trainer.resume()
