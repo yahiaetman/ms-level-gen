@@ -1,9 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
-import json
-import random, os, datetime, pathlib
+import os, datetime, pathlib
 import time
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, List, Optional, Tuple
 import warnings
 
 import torch
@@ -12,17 +11,42 @@ import tqdm
 import yaml
 from common.config_tools import config
 
-from games import GameConfig, create_game
+from games import GameConfig
 from common.heatmap import Heatmaps
 from .dataset import Dataset
-from methods.ms_conditions import ConditionModel, get_condition_model_by_name
-from .models import GFlowMSGenerator, get_msgen_by_name
+from methods.ms_conditions import ConditionModel
+from .models import GFlowMSGenerator
 from .optimizers import GFlowMSTBOptimizer
 
 class Trainer:
+    """Train a GFlowNet Multi-size generator.
+    It orchestrates the whole training process and contains the training loop.
+    """
+    
     @config
     @dataclass
     class Config:
+        """The trainer configuration.
+
+        It contains:
+        - "game_config":            the config used to create the game.
+        - "conditions":             the names of the level properties to control.
+        - "sizes":                  the training sizes.
+        - "dataset_config":         the config of the dataset (experience replay buffer).
+        - "condition_model_config": the config of the condition model used to sample conditions during training.
+        - "generator_config":       the config used to create the generator.
+        - "optimizer_config":       the config used to create the optimizer.
+        - "training_steps":         the number of training steps (each step goes through every training size).
+        - "batch_size":             the training batch size.
+        - "checkpoint_period":      the number of steps before new checkpoints of the optimizer and dataset are saved.
+        - "sample_render_period":   the number of steps before the generated level batch is rendered and sent to tensorboard.
+        - "heatmap_config":         the heatmap configuration.
+        - "heatmap_render_period":  the number of steps before a new heatmap set is rendered and sent to tensorboard.
+        - "save_path":              the path to which all the checkpoints and tensorboard logs are saved. It could contain:
+                                        - "%TIME": It will be replaced by a timestamp consisting of the current date and time with the precision of seconds.
+                                        - "%NAME": It will be replaced by the experiment name.
+        - "name_suffix":            a suffix to add to the experiment name.
+        """
         game_config: GameConfig
         conditions: List[str]
         sizes: List[Tuple[int, int]]
@@ -40,12 +64,14 @@ class Trainer:
         name_suffix: Optional[str] = None
 
         def create_trainer(self):
+            """Create a training from this config.
+            """
             return Trainer(self)
     
     def __init__(self, config: Trainer.Config) -> None:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.game = create_game(config.game_config)
+        self.game = config.game_config.create()
         self.dataset = Dataset(self.game, config.conditions, config.sizes, config.dataset_config)
         self.condition_model: ConditionModel = config.condition_model_config.model_constructor(self.game, config.conditions)
         self.netG: GFlowMSGenerator = config.generator_config.model_constructor(len(self.game.tiles), len(config.conditions)).to(self.device)
@@ -75,6 +101,8 @@ class Trainer:
         self.starting_step = 1
     
     def resume(self):
+        """Resume a training process.
+        """
         checkpoint_info_path = os.path.join(self.checkpoint_path, "checkpoint.yml")
         if os.path.exists(checkpoint_info_path):
             checkpoint_state = yaml.unsafe_load(open(checkpoint_info_path, 'r'))
@@ -93,18 +121,23 @@ class Trainer:
         self.train()
         
     def train(self):
+        """Start training from the current state (from scratch or as a resumption if it is called from 'resume').
+        """
         batch_size = self.config.batch_size
 
         self.writer = tensorboard.writer.SummaryWriter(log_dir=self.log_path, purge_step=self.starting_step)
+        # print the tensorboard command to track the experiment.
         print(f"\033[1mTensorboard Command: \033[4m\033[92mtensorboard --logdir {self.log_path}\033[0m")
 
         self.optG.train()
 
-        start_time = time.time() - self.elapsed_time
+        start_time = time.time() - self.elapsed_time # We subtract the elapsed time to handle training resumptions.
 
         pbar = tqdm.tqdm(total=self.config.training_steps, initial=self.starting_step-1, desc="Start..", dynamic_ncols=True)
         for step in range(self.starting_step, self.config.training_steps+1):
+
             for size_index, size in enumerate(self.dataset.sizes):
+
                 pbar.set_description(f"{size}: Query Conditions...")
                 query_conditions = self.condition_model.sample(size, batch_size)
                 
@@ -125,7 +158,9 @@ class Trainer:
                 
                 losses, log_z0s = {}, {}
 
-                if size_index == 0 or len(self.dataset.clusters[size]) >= self.dataset.config.cluster_threshold.get(size, 0):
+                # Other than the seed size (the first size), all the other sizes are not trained until a certain
+                # number of cluster for them already exists.
+                if size_index == 0 or len(self.dataset.clusters[size]) >= self.dataset.config.cluster_threshold.get(size, 1):
                     pbar.set_description(f"{size}: Tell Optimizer.....")
                     loss, log_z0 = self.optG.tell(log_rewards.to(self.device))
                     losses["on-policy"] = loss

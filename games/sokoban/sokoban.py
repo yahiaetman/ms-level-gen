@@ -6,6 +6,20 @@ import random
 from .parallel_solver import SokobanParallelSolver
 from .solver import SokobanSolver as PythonSolver
 
+"""
+The Sokoban game implementation.
+
+Tileset:
+--------
+.   empty
+W   wall
+0   goal
+1   crate
+A   player
+g   crate on goal
++   player on goal
+"""
+
 class Sokoban(Game):
     def __init__(self, solver_iteration_limits: Dict[Tuple[int, int], int] = None, solver_cpu_count: Optional[int] = None, cache_analysis: bool = True, **kwargs) -> None:
         super().__init__("SOKOBAN", '.W01Ag+', "games/sokoban/sprites.png", {"expand": self.expand_dataset})
@@ -20,7 +34,7 @@ class Sokoban(Game):
     
     @property
     def possible_augmentation_count(self) -> int:
-        return 4
+        return 4 # 2 for the vertical flipping x 2 for the horizontal flipping
     
     def augment_level(self, level: Level, augnmentation_bits: Optional[int] = None) -> Level:
         if augnmentation_bits is None: augnmentation_bits = random.randint(0, 1<<2 - 1)
@@ -31,9 +45,9 @@ class Sokoban(Game):
         return level
 
     def generate_random(self, level_count: int, size: Tuple[int, int], *, mode: str = "basic", crates: Optional[int] = None) -> List[Level]:
-        if mode == "basic":
+        if mode == "basic": # Randomly selects tiles and every tile has an equal probability
             return super().generate_random(level_count, size)
-        elif mode == "naive":
+        elif mode == "naive": # Randomly selects tiles but each tile has a different probability according to how much it is expected to appear
             h, w = size
             crates = crates or max(w,h)
             RAW_PLAYER_PROP = 1/(w*h)
@@ -47,7 +61,7 @@ class Sokoban(Game):
             all_tiles_weights = [EMPTY_PROP, WALL_PROP, GOAL_PROP, CRATE_PROP, PLAYER_PROP, CRATE_GOAL_PROP, PLAYER_GOAL_PROP]  
             all_tiles = list(range(7)) 
             return [[random.choices(all_tiles, all_tiles_weights, k=w) for _ in range(h)] for _ in range(level_count)]
-        elif mode == "compilable":
+        elif mode == "compilable": # The tiles are added while making sure it satisfies the compilability constraints (e.g., only one player is allowed).
             h, w = size
             crates = crates or max(w,h)
             levels = []
@@ -72,7 +86,7 @@ class Sokoban(Game):
 
     def analyze(self, levels: List[Level], **kwargs) -> List[Dict[str, Any]]:
         results = [None]*len(levels)
-        # uniquify
+        # uniquify the levels to avoid invoking the solver for duplicates
         cache = self.cache
         unique_levels_to_solve = []
         unique_level_to_result_indices = []
@@ -91,7 +105,7 @@ class Sokoban(Game):
             unique_level_to_result_indices.append([index])
         
         solutions = self.solver.solve_levels(unique_levels_to_solve)
-        # Tiles: ['.', 'W', '0', '1', 'A', 'g', '+']
+        
         for result_indices, level, solution in zip(unique_level_to_result_indices, unique_levels_to_solve, solutions):
             h, w = len(level), len(level[0])
             area = h * w
@@ -112,8 +126,8 @@ class Sokoban(Game):
             player_positions = [(j, i) for j, row in enumerate(level) for i, tile in enumerate(row) if tile==4 or tile==6]
             result["player-count"] = len(player_positions)
             player_L1 = sum((abs(j-center_j) + abs(i-center_i)) for j, i in player_positions)/len(player_positions) if player_positions else 0
-            result["player-L1"] = player_L1
-            result["player-L1-norm"] = player_L1 / (center_j + center_i)
+            result["player-L1"] = player_L1 # Player L1 distance from the level center
+            result["player-L1-norm"] = player_L1 / (center_j + center_i) # Player L1 distance from the center, normalized from 0 to 1
             
             solution = result["solution"]
             solvable = solution is not None

@@ -1,9 +1,17 @@
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional
 from games.game import Level
 from concurrent.futures import ThreadPoolExecutor
 import sokosolve
 import os, queue
 from threading import Lock
+
+"""
+Sokosolve is a C-Solver for Sokoban so we can run multiple solvers in parallel
+via threading. The Parallel Solver works by creating a queue of solvers for each
+level size (created on-demand) and whenever a new level has to be solved, the
+executer assigns it to a thread which requests a solver for the given level's 
+size from the queue.
+"""
 
 class SolverQueue:
     def __init__(self, height:int, width:int, capacity: int, cpu_count: Optional[int] = None) -> None:

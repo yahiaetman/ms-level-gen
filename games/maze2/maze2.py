@@ -4,13 +4,24 @@ from games.game import Game, Level, ConditionUtility
 import random
 from .utils import *
 
+"""
+The Maze game implementation but with a player and a goal.
+
+Tileset:
+--------
+.   empty
+W   wall
+g   goal
+A   player
+"""
+
 class Maze2(Game):
     def __init__(self, **kwargs) -> None:
         super().__init__("MAZE2", '.wgA', "games/maze2/sprites.png")
     
     @property
     def possible_augmentation_count(self) -> int:
-        return 4
+        return 4 # 2 for the vertical flipping x 2 for the horizontal flipping
     
     def augment_level(self, level: Level, augnmentation_bits: Optional[int] = None) -> Level:
         if augnmentation_bits is None: augnmentation_bits = random.randint(0, 1<<2 - 1)
@@ -20,13 +31,10 @@ class Maze2(Game):
             level = [row[::-1] for row in level]
         return level
     
-    def augment_level(self, level: Level, augnmentation_bits: Optional[int] = None) -> Level:
-        return level
-    
     def generate_random(self, level_count: int, size: Tuple[int, int], *, mode: str = "basic") -> List[Level]:
-        if mode == "basic":
+        if mode == "basic": # Randomly selects tiles and every tile has an equal probability
             return super().generate_random(level_count, size)
-        elif mode == "naive":
+        elif mode == "naive": # Randomly selects tiles but each tile has a different probability according to how much it is expected to appear
             h, w = size
             area = h * w
             enemies = enemies or max(w, h)
@@ -35,7 +43,7 @@ class Maze2(Game):
             all_tiles_weights = [EMPTY_PROP, WALL_PROP, DOOR_PROP, PLAYER_PROP]  
             all_tiles = list(range(len(self.tiles)))
             return [[random.choices(all_tiles, all_tiles_weights, k=w) for _ in range(h)] for _ in range(level_count)]
-        elif mode == "compilable":
+        elif mode == "compilable": # The tiles are added while making sure it satisfies the compilability constraints (e.g., only one player is allowed).
             levels = []
             for _ in range(level_count):
                 locations = {(j,i) for j in range(h) for i in range(w)}

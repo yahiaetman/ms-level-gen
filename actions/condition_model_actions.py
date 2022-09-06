@@ -10,8 +10,12 @@ Arguments:
     * A glob pattern for the level files to use for fitting the condition model.
     * The path to which the condition model should be save (no extension since 
         2 files with the extensions will be created: '.yaml' for the model config & '.pt' for the model data)
-    * -g, -game: a path to the game config. If not specified, a training config will be searched for in the levels' parents.
-    * -c, ---conditions: a path to the condition config. If not specified, a training config will be searched for in the levels' parents.
+    * -g, -game: a path to the game config. If not specified, a training config will be searched for in the 
+            levels' parents.
+    * -c, ---conditions: a path to the condition config. If not specified, a training config will be searched
+            for in the levels' parents.
+    * -e, --extend: a path to a saved condition model to use as the base. In other words, it will be loaded,
+            updated then saved to the output path. 
     * -cfg & -ovr: The condition model configuration.
 '''
 
@@ -19,12 +23,14 @@ def action_generate_condition_model_ms(args: argparse.Namespace):
     import json, pathlib, yaml, glob
     from collections import defaultdict
     from . import utils
-    from games import create_game
+    from games import GameConfig
+    from methods.ms_conditions import ConditionModel
     
     levels_glob_path: str = args.levels
     outputs_path: str = args.output
     game_path: str = args.game
     conditions_path: str = args.conditions
+    extend_path: str = args.extend
     config = config_tools.get_config_from_namespace(args)
 
     if "%END" in levels_glob_path:
@@ -43,12 +49,15 @@ def action_generate_condition_model_ms(args: argparse.Namespace):
     else:
         conditions = utils.access_yaml(conditions_path)
     if game_path == "":
-        game_config = training_config.game_config
+        game_config: GameConfig = training_config.game_config
     else:
-        game_config = utils.access_yaml(game_path)
+        game_config: GameConfig = utils.access_yaml(game_path)
 
-    game = create_game(game_config)
-    cond_model = config.model_constructor(game, conditions)
+    game = game_config.create()
+    cond_model: ConditionModel = config.model_constructor(game, conditions)
+
+    if extend_path:
+        cond_model.load(extend_path)
     
     levels_files = glob.glob(levels_glob_path)
     level_groups = defaultdict(list)
@@ -80,5 +89,6 @@ def register_generate_condition_model_ms(parser: argparse.ArgumentParser):
     parser.add_argument("output", type=str, help="path to the save the condition")
     parser.add_argument("-g", "--game", type=str, default="", help="the game configuration")
     parser.add_argument("-c", "--conditions", type=str, default="", help="the conditions")
+    parser.add_argument("-e", "--extend", type=str, default="", help="the condition model to extend upon if given.")
     config_tools.add_config_arguments(parser)
     parser.set_defaults(func=action_generate_condition_model_ms)

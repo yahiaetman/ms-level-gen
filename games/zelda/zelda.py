@@ -4,13 +4,28 @@ from games.game import Game, Level, ConditionUtility
 import random
 from .utils import *
 
+"""
+The GVGAI version of Zelda game implementation.
+
+Tileset:
+--------
+.   empty
+W   wall
++   key
+g   door
+A   player
+1   bat
+2   spider
+3   scorpion
+"""
+
 class Zelda(Game):
     def __init__(self, **kwargs) -> None:
         super().__init__("ZELDA", '.w+gA123', "games/zelda/sprites.png")
     
     @property
     def possible_augmentation_count(self) -> int:
-        return 4
+        return 4 # 2 for the vertical flipping x 2 for the horizontal flipping
     
     def augment_level(self, level: Level, augnmentation_bits: Optional[int] = None) -> Level:
         if augnmentation_bits is None: augnmentation_bits = random.randint(0, 1<<2 - 1)
@@ -21,9 +36,9 @@ class Zelda(Game):
         return level
     
     def generate_random(self, level_count: int, size: Tuple[int, int], *, mode: str = "basic", enemies: Optional[int] = None) -> List[Level]:
-        if mode == "basic":
+        if mode == "basic": # Randomly selects tiles and every tile has an equal probability
             return super().generate_random(level_count, size)
-        elif mode == "naive":
+        elif mode == "naive": # Randomly selects tiles but each tile has a different probability according to how much it is expected to appear
             h, w = size
             area = h * w
             enemies = enemies or max(w, h)
@@ -34,7 +49,7 @@ class Zelda(Game):
             all_tiles_weights = [EMPTY_PROP, WALL_PROP, KEY_PROP, DOOR_PROP, PLAYER_PROP, BAT_PROP, SPIDER_PROP, SCORPION_PROP]  
             all_tiles = list(range(len(self.tiles)))
             return [[random.choices(all_tiles, all_tiles_weights, k=w) for _ in range(h)] for _ in range(level_count)]
-        elif mode == "compilable":
+        elif mode == "compilable": # The tiles are added while making sure it satisfies the compilability constraints (e.g., only one player is allowed).
             h, w = size
             enemies = enemies or max(w, h)
             levels = []
@@ -75,6 +90,7 @@ class Zelda(Game):
             result["enemies"] = enemies
             result["enemies-ratio"] = enemies / area
             
+            # The L1 distances of important objects from the level center
             center_j, center_i = (h-1)/2, (w-1)/2
             key_positions = [(j,i) for j, row in enumerate(level) for i, tile in enumerate(row) if tile==2]
             result["key-L1"] = key_L1 = sum((abs(j-center_j) + abs(i-center_i)) for j, i in key_positions)/len(key_positions) if key_positions else 0

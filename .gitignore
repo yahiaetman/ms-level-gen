@@ -64,3 +64,4 @@ runs/
 
 # Unwanted
 backup/
+_*.ps1

@@ -5,6 +5,20 @@ from games.game import Game, Level, ConditionUtility
 import random
 from .solver import DaveSolver
 
+"""
+The Danger Dave game implementation.
+
+Tileset:
+--------
+.   empty
+W   wall
++   key
+g   door
+A   player
+$   diamond
+*   spike
+"""
+
 class Dave(Game):
     def __init__(self, cache_analysis: bool = True, **kwargs) -> None:
         super().__init__("DAVE", '.W+gA$*', "games/dave/sprites.png")
@@ -12,7 +26,7 @@ class Dave(Game):
     
     @property
     def possible_augmentation_count(self) -> int:
-        return 2
+        return 2 # 2 for the horizontal flipping (no vertical flipping due to gravity).
     
     def augment_level(self, level: Level, augnmentation_bits: Optional[int] = None) -> Level:
         if augnmentation_bits is None: augnmentation_bits = random.randint(0, 1<<1 - 1)
@@ -21,9 +35,9 @@ class Dave(Game):
         return level
 
     def generate_random(self, level_count: int, size: Tuple[int, int], *, mode: str = "basic", diamonds: Optional[int] = None, spikes: Optional[int] = None) -> List[Level]:
-        if mode == "basic":
+        if mode == "basic": # Randomly selects tiles and every tile has an equal probability
             return super().generate_random(level_count, size)
-        elif mode == "naive":
+        elif mode == "naive": # Randomly selects tiles but each tile has a different probability according to how much it is expected to appear
             h, w = size
             diamonds = diamonds or max(w, h)
             spikes = spikes or (max(w, h) - 1)
@@ -34,7 +48,7 @@ class Dave(Game):
             all_tiles_weights = [EMPTY_PROP, WALL_PROP, KEY_PROP, DOOR_PROP, PLAYER_PROP, DIAMOND_PROP, SPIKE_PROP]  
             all_tiles = list(range(7)) 
             return [[random.choices(all_tiles, all_tiles_weights, k=w) for _ in range(h)] for _ in range(level_count)]
-        elif mode == "compilable":
+        elif mode == "compilable": # The tiles are added while making sure it satisfies the compilability constraints (e.g., only one player is allowed).
             h, w = size
             diamonds = diamonds or max(w, h)
             spikes = spikes or (max(w, h) - 1)
@@ -75,7 +89,7 @@ class Dave(Game):
 
     def analyze(self, levels: List[Level], **kwargs) -> List[Dict[str, Any]]:
         results = [None]*len(levels)
-        # uniquify
+        # uniquify the levels to avoid invoking the solver for duplicates
         cache = self.cache
         unique_levels_to_solve = []
         unique_level_to_result_indices = []
@@ -124,8 +138,8 @@ class Dave(Game):
             player_positions = [(j, i) for j, row in enumerate(level) for i, tile in enumerate(row) if tile==4]
             result["player-count"] = len(player_positions)
             player_L1 = sum((abs(j-center_j) + abs(i-center_i)) for j, i in player_positions)/len(player_positions) if player_positions else 0
-            result["player-L1"] = player_L1
-            result["player-L1-norm"] = player_L1 / (center_j + center_i)
+            result["player-L1"] = player_L1 # Player L1 distance from the level center
+            result["player-L1-norm"] = player_L1 / (center_j + center_i) # Player L1 distance from the center, normalized from 0 to 1
             
             solution: str = result["solution"]
             solvable = solution is not None

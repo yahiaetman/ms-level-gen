@@ -1,8 +1,25 @@
 from collections import Counter
 import math
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
+from .game import Level
 
-def entropy(level: List[List[int]], window_size: Tuple[int, int] = (2, 2), pad: Optional[int] = None):
+def entropy(level: Level, window_size: Tuple[int, int] = (2, 2), pad: Optional[int] = None) -> float:
+    """Calculate the entropy for a level where the tokens are collected via a sliding window.
+
+    Parameters
+    ----------
+    level : Level
+        The level for which the entropy is computed.
+    window_size : Tuple[int, int], optional
+        The sliding window size (height, width). (Default: (2, 2))
+    pad : Optional[int], optional
+        A value to add as a padding around the level. If None, no padding is done. (Default: None)
+
+    Returns
+    -------
+    float
+        The entropy.
+    """
     if len(level) == 0: return 0
     if pad is not None:
         level = [[pad, *row, pad] for row in level]

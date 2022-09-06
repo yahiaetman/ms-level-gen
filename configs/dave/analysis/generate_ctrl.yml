@@ -1,15 +1,15 @@
 generation_sizes:
-  - !tup [3, 4]
-  - !tup [3, 6]
-  - !tup [5, 4]
-  - !tup [5, 6]
-  - !tup [5, 11]
-  - !tup [7, 6]
-  - !tup [7, 11]
-  - !tup [6, 10]
-  - !tup [10, 6]
-  - !tup [8, 12]
-  - !tup [9, 13]
+  !tup [3, 4]: 'it'
+  !tup [3, 6]: 'it'
+  !tup [5, 4]: 'it'
+  !tup [5, 6]: 'it'
+  !tup [5, 11]: 'it'
+  !tup [7, 6]: 'it'
+  !tup [7, 11]: 'it'
+  !tup [6, 10]: 'oot'
+  !tup [10, 6]: 'oot'
+  !tup [8, 12]: 'oot'
+  !tup [9, 13]: 'oot'
 controlled_conditions:
 - control_name: "spikes"
   condition: "spikes-ratio"

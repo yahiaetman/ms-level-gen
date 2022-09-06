@@ -2,6 +2,24 @@ from collections import deque
 from typing import List, Optional, Set, Tuple
 
 def compute_shortest_path_length(obstacles: List[List[bool]], starting_points: List[Tuple[int, int]], goal_points: Set[Tuple[int, int]]) -> Optional[int]:
+    """Computes the shortest path length from any of the given starting points to any of the given goals.
+    The path cannot intersect an obstacle and if no path is found, this function returns None.
+
+    Parameters
+    ----------
+    obstacles : List[List[bool]]
+        A 2D array where obstacles are marked with True.
+    starting_points : List[Tuple[int, int]]
+        All the starting points.
+    goal_points : Set[Tuple[int, int]]
+        All the goal points.
+
+    Returns
+    -------
+    Optional[int]
+        The shortest path length from any of the given starting points to any of the given goals.
+        If no path is found, this function returns None.
+    """
     h, w = len(obstacles), len(obstacles[0])
     infinity = h*w + 1
     distance_map = [[infinity]*w for _ in range(h)]
@@ -22,6 +40,22 @@ def compute_shortest_path_length(obstacles: List[List[bool]], starting_points: L
     return None
 
 def create_shortest_path_map(obstacles: List[List[bool]], starting_points: List[Tuple[int, int]]) -> List[List[int]]:
+    """Given a list of starting points, this function returns a 2D map of the shortest path distance
+    to any of the starting points. Unreachable points (including obstacles) will have the value (area + 1).
+
+    Parameters
+    ----------
+    obstacles : List[List[bool]]
+        A 2D array where obstacles are marked with True.
+    starting_points : List[Tuple[int, int]]
+        All the starting points.
+
+    Returns
+    -------
+    List[List[int]]
+        A 2D map of the shortest path distance to any of the starting points.
+        Unreachable points (including obstacles) will have the value (area + 1).
+    """
     h, w = len(obstacles), len(obstacles[0])
     infinity = h*w + 1
     distance_map = [[infinity]*w for _ in range(h)]

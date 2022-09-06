@@ -11,7 +11,7 @@ from actions.statistics_actions import register_profile_generator_time_ms
 # from here you can call all the subcommands
 
 def main():
-    parser = argparse.ArgumentParser("Multi-Size Level Generator")
+    parser = argparse.ArgumentParser(description="Multi-Size Level Generator")
     subparsers = parser.add_subparsers()
 
     # Here we register all the subcommands which can be called as follows:

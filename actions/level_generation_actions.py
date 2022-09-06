@@ -11,7 +11,11 @@ Arguments:
     * path to the model weights.
     * path to the condition model (without extension).
     * path to which the output will be written.
-    * -gen, --generator: path to the generator config. If not specified, a training config will be searched for in the weight's parents.
+    * -gen, --generator: path to the generator config. If not specified, a training config 
+            will be searched for in the weight's parents.
+    * -f, --filter: a regex filter to pick which sizes to keep in the generation process.
+            Typically, the sizes would be tagged with 'it' for in-training and 'oot' for 
+            out-of-training.
     * -cfg & -ovr: The generation configuration.
 
 The generation configurations contains:
@@ -29,8 +33,8 @@ In addition, a statistics file is saved to store the generation time, the number
 '''
 
 def action_generate_levels_ms(args: argparse.Namespace):
-    import json, os, pathlib, torch, yaml, time
-    from games import create_game
+    import json, os, pathlib, torch, yaml, time, re
+    from games import GameConfig
     from . import utils
     from methods.generator import MSGenerator
 
@@ -38,6 +42,7 @@ def action_generate_levels_ms(args: argparse.Namespace):
     condition_model_path: str = args.cm
     generator_path: str = args.generator
     output_path: str = args.output
+    tag_filter = re.compile(args.filter)
     config = config_tools.get_config_from_namespace(args)
 
     if "%END" in weights_path:
@@ -66,15 +71,18 @@ def action_generate_levels_ms(args: argparse.Namespace):
     assert os.path.exists(condition_model_path + ".yml"), "The condition model config file must exist"
 
     condition_model_config = config_tools.read_config(condition_model_path + ".yml")
+    game_config: GameConfig = condition_model_config["game_config"]
     
-    game = create_game(condition_model_config["game_config"])
+    game = game_config.create()
     conditions = condition_model_config["conditions"]
 
-    generation_sizes = config.get("generation_sizes", [])
+    generation_sizes = config.get("generation_sizes", {})
     generation_amount = config.get("generation_amount", 10000)
     trials = config.get("trials", 1)
     prefix = config.get("prefix", "")
     if prefix: prefix += "_"
+
+    generation_sizes = [size for size, tag in generation_sizes.items() if tag_filter.match(tag) is not None]
 
     cond_model = condition_model_config["condition_model_config"].model_constructor(game, conditions)
     cond_model.load(condition_model_path + ".cm")
@@ -126,6 +134,7 @@ def register_generate_levels_ms(parser: argparse.ArgumentParser):
     parser.add_argument("cm", type=str, help="path to the condition model file")
     parser.add_argument("output", type=str, help="path to which the levels will be saved")
     parser.add_argument("-gen", "--generator", type=str, default="", help="path to the condition model file")
+    parser.add_argument("--filter", "-f", type=str, default=".*", help="the generator size filter")
     config_tools.add_config_arguments(parser)
     parser.set_defaults(func=action_generate_levels_ms)
 
@@ -139,7 +148,11 @@ Arguments:
     * path to the model weights.
     * path to the condition model (without extension).
     * path to which the output will be written.
-    * -gen, --generator: path to the generator config. If not specified, a training config will be searched for in the weight's parents.
+    * -gen, --generator: path to the generator config. If not specified, a training config
+            will be searched for in the weight's parents.
+    * -f, --filter: a regex filter to pick which sizes to keep in the generation process.
+            Typically, the sizes would be tagged with 'it' for in-training and 'oot' for
+            out-of-training. 
     * -cfg & -ovr: The generation configuration.
 
 The generation configurations contains for each requested control:
@@ -158,8 +171,8 @@ In addition, a statistics file is saved to store the generation time, the number
 '''
 
 def action_generate_levels_controllable_ms(args: argparse.Namespace):
-    import json, os, pathlib, torch, yaml, time, tqdm
-    from games import create_game
+    import json, os, pathlib, torch, yaml, time, tqdm, re
+    from games import GameConfig
     from . import utils
     from methods.generator import MSGenerator
     from methods.ms_conditions import ControllableConditionModel
@@ -168,6 +181,7 @@ def action_generate_levels_controllable_ms(args: argparse.Namespace):
     condition_model_path: str = args.cm
     generator_path: str = args.generator
     output_path: str = args.output
+    tag_filter = re.compile(args.filter)
     config = config_tools.get_config_from_namespace(args)
 
     if "%END" in weights_path:
@@ -195,15 +209,18 @@ def action_generate_levels_controllable_ms(args: argparse.Namespace):
     assert os.path.exists(condition_model_path + ".yml"), "The condition model config file must exist"
 
     condition_model_config = config_tools.read_config(condition_model_path + ".yml")
+    game_config: GameConfig = condition_model_config["game_config"]
     
-    game = create_game(condition_model_config["game_config"])
+    game = game_config.create()
     conditions = condition_model_config["conditions"]
 
-    generation_sizes = config.get("generation_sizes", [])
+    generation_sizes = config.get("generation_sizes", {})
     controlled_conditions = config.get("controlled_conditions", [])
     trials = config.get("trials", 1)
     prefix = config.get("prefix", "")
     if prefix: prefix += "_"
+
+    generation_sizes = [size for size, tag in generation_sizes.items() if tag_filter.match(tag) is not None]
 
     cond_model: ControllableConditionModel = condition_model_config["condition_model_config"].model_constructor(game, conditions)
     cond_model.load(condition_model_path + ".cm")
@@ -267,6 +284,7 @@ def register_generate_levels_controllable_ms(parser: argparse.ArgumentParser):
     parser.add_argument("cm", type=str, help="path to the condition model file")
     parser.add_argument("output", type=str, help="path to which the levels will be saved")
     parser.add_argument("-gen", "--generator", type=str, default="", help="path to the condition model file")
+    parser.add_argument("--filter", "-f", type=str, default=".*", help="the generator size filter")
     config_tools.add_config_arguments(parser)
     parser.set_defaults(func=action_generate_levels_controllable_ms)
 
@@ -278,7 +296,11 @@ Generate random levels at multiple sizes.
 Arguments:
     * path to the game configuration.
     * path to which the output will be written.
-    * -m, --mode: the random generator's mode (this depends on what is implemented for each game). (Default: "basic")
+    * -m, --mode: the random generator's mode (this depends on what is implemented for each
+            game). (Default: "basic")
+    * -f, --filter: a regex filter to pick which sizes to keep in the generation process.
+            Typically, the sizes would be tagged with 'it' for in-training and 'oot' for 
+            out-of-training.
     * -cfg & -ovr: The generation configuration.
 
 The generation configurations contains:
@@ -296,23 +318,27 @@ In addition, a statistics file is saved to store the generation time, the number
 '''
 
 def action_random_generate_levels_ms(args: argparse.Namespace):
-    import json, os, pathlib, yaml, time
-    from games import create_game
+    import json, os, pathlib, yaml, time, re
+    from games import GameConfig
 
     game_config_path: str = args.game
     output_path: str = args.output
     rng_mode = args.mode
+    tag_filter = re.compile(args.filter)
     config = config_tools.get_config_from_namespace(args)
     
-    game = create_game(config_tools.read_config(game_config_path))
+    game_config: GameConfig = config_tools.read_config(game_config_path)
+    game = game_config.create()
     
-    generation_sizes = config.get("generation_sizes", [])
+    generation_sizes = config.get("generation_sizes", {})
     generation_amount = config.get("generation_amount", 10000)
     trials = config.get("trials", 1)
     prefix = config.get("prefix", "")
     if prefix: prefix += "_"
 
     pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
+
+    generation_sizes = [size for size, tag in generation_sizes.items() if tag_filter.match(tag) is not None]
 
     generation_stats = {}
     for size_index, size in enumerate(generation_sizes):
@@ -351,5 +377,6 @@ def register_random_generate_levels_ms(parser: argparse.ArgumentParser):
     parser.add_argument("game", type=str, help="path to the game configuration")
     parser.add_argument("output", type=str, help="path to which the levels will be saved")
     parser.add_argument("--mode", "-m", type=str, default="basic", help="the generator mode")
+    parser.add_argument("--filter", "-f", type=str, default=".*", help="the generator size filter")
     config_tools.add_config_arguments(parser)
     parser.set_defaults(func=action_random_generate_levels_ms)

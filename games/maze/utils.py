@@ -18,7 +18,7 @@ def is_fully_connected(obstacles: List[List[bool]]) -> bool:
     return len(walkable) == 0
 
 
-# # returns None if any empty location cannot be reached from another empty location
+# returns None if any empty location cannot be reached from another empty location
 def compute_longest_shortest_path_length(obstacles: List[List[bool]]) -> Optional[int]:
     h, w = len(obstacles), len(obstacles[0])
     infinity = h*w + 1

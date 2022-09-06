@@ -180,26 +180,23 @@ def __merge_two(obj1, obj2):
         return obj2
     
     # Merge the objects
-    obj1_ovr = getattr(obj1, __CONFIG_OVERRIDE_ATTR, set())
-    obj2_ovr = getattr(obj2, __CONFIG_OVERRIDE_ATTR, set())
+    obj1_override = getattr(obj1, __CONFIG_OVERRIDE_ATTR, set())
+    obj2_override = getattr(obj2, __CONFIG_OVERRIDE_ATTR, set())
     fields = dataclasses.fields(obj1)
-    for f in fields:        
-        o1 = f.name in obj1_ovr
-        o2 = f.name in obj2_ovr
-        v1 = getattr(obj1, f.name)
-        v2 = getattr(obj2, f.name)
-        if o1:
-            if o2:
-                if f.metadata.get("no_merge", False):
-                    setattr(obj1, f.name, v2)
+    for field in fields: 
+        if field.name in obj2_override: # only try to update obj1, if the field in obj2 was set by the loader 
+            if field.name in obj1_override: # if the field in obj1 is also set by the loader, we try to merge
+                if field.metadata.get("merge", True): # check if merging is allowed this field 
+                    setattr(obj1, field.name, __merge_two(
+                        getattr(obj1, field.name), 
+                        getattr(obj2, field.name)
+                    ))
                 else:
-                    # if both fields were set, merge them.
-                    setattr(obj1, f.name, __merge_two(v1, v2))
-        else:
-            if o2:
-                setattr(obj1, f.name, v2)
-                obj1_ovr.add(f.name)
-    setattr(obj1, __CONFIG_OVERRIDE_ATTR, obj1_ovr)
+                    setattr(obj1, field.name, getattr(obj2, field.name))
+            else:
+                setattr(obj1, field.name, getattr(obj2, field.name))
+                obj1_override.add(field.name)
+    setattr(obj1, __CONFIG_OVERRIDE_ATTR, obj1_override)
     return obj1
 
 def merge(*objs):
@@ -264,43 +261,46 @@ def config(cls=None, /, *, merge=True):
 # Constructors for special tags (e.g. Objects, Includes, etc.) #
 ################################################################
 
-# Internal function: construct a python tuple.
-def __tup_cons(loader: yaml.Loader, node: yaml.Node):
-    return loader.construct_python_tuple(node)
-
 # Internal function: construct a list from a range initialized by the args in the yaml node.
 def __range_cons(loader: yaml.Loader, node: yaml.Node):
     args = loader.construct_python_tuple(node)
-    return list(range(*args))
+    try:
+        return list(range(*args))
+    except BaseException as e:
+        raise RuntimeError(f"Failed to generate a range list from the arguments: {args}") from e
 
 # Internal function: construct a Config object whose class is defined in the suffix
 #                    and the fields are defined in the yaml node.    
 def __obj_cons(loader: yaml.Loader, suffix: str, node: yaml.Node):
     import importlib
     module_name, class_name = suffix.split('/')
-    m = importlib.import_module(module_name)
-    class_nesting = class_name.split('.')
-    cls = m
-    for name in class_nesting:
+
+    cls = importlib.import_module(module_name)
+    for name in class_name.split('.'):
         cls = getattr(cls, name)
+
+    assert hasattr(cls, __CONFIG_ATTR), f"The class '{cls.__module__}.{cls.__name__}' must be a config class. Make sure it is decorated by '@config'."
+    
     fields = dataclasses.fields(cls)
-    init, post_init, ovr = {}, {}, set()
+    init, post_init, override = {}, {}, set()
     data = loader.construct_mapping(node)
     for f in fields:
         if f.init:
             if f.name in data:
                 init[f.name] = data[f.name]
-                ovr.add(f.name)
+                override.add(f.name)
             elif f.default is dataclasses.MISSING and f.default_factory is dataclasses.MISSING:
                 init[f.name] = dataclasses.MISSING
         else:
             if f.name in data:
                 post_init[f.name] = data[f.name]
-                ovr.add(f.name)
+                override.add(f.name)
+    
     obj = cls(**init)
     for name, val in post_init.items():
         setattr(obj, name, val)
-    setattr(obj, __CONFIG_OVERRIDE_ATTR, ovr)
+    setattr(obj, __CONFIG_OVERRIDE_ATTR, override)
+    
     return obj
 
 # Internal function: construct an object by loading the path defined in node
@@ -312,6 +312,7 @@ def __inc_cons(loader: yaml.Loader, node: yaml.Node):
         stream_url = getattr(stream, "name", None)
         if stream_url is not None:
             url = str(pathlib.Path(stream_url).parent.joinpath(url))
+    assert pathlib.Path(url).exists(), f"The included file {url} does not exist."
     return read_config(url)
 
 ################################################
@@ -328,12 +329,15 @@ def __update_object(obj, keys: List[str], value):
     elif isinstance(obj, list):
         assert top.isdigit(), "a list accessor must be a number"
         index = int(top)
+        assert 0 <= index < len(obj), f"index {index} is out of bound for the list {obj} (len: {len(obj)})"
         obj[index] = __update_object(obj[index], keys[1:], value)
         return obj
     elif isinstance(obj, dict):
+        assert top in obj, f"the dict {obj} does not contain the key '{top}'"
         obj[top] = __update_object(obj.get(top), keys[1:], value)
         return obj
     elif hasattr(obj, top):
+        assert hasattr(obj, top), f"the object {obj} does not contain the attribute '{top}'"
         setattr(obj, top, __update_object(getattr(obj, top), keys[1:], value))
         return obj
     else:
@@ -361,7 +365,10 @@ def update_object(obj, updates: Dict[str, Any]):
     """
     for key, value in updates.items():
         keys = key.split('.')
-        obj = __update_object(obj, keys, value)
+        try:
+            obj = __update_object(obj, keys, value)
+        except BaseException as e:
+            raise RuntimeError(f"Failed to update the object {obj} at the path '{key}' to the value {repr(value)}") from e
     return obj
 
 def access_object(obj, key: Union[str, List[str]]):
@@ -447,7 +454,10 @@ def get_config_from_namespace(args: argparse.Namespace):
             key, value = override.split('=')
             if key.endswith(':'):
                 key = key[:-1]
-                value = eval(value)
+                try:
+                    value = eval(value)
+                except BaseException as e:
+                    raise RuntimeError(f"Failed to eval override value '{value}'") from e
             updates[key] = value
         config = update_object(config, updates)
     return config
@@ -464,14 +474,17 @@ def read_config(*paths):
     str
         paths to config files.
     """
+    if getattr(read_config, "__constructors_not_registered", True):
+        yaml.UnsafeLoader.add_constructor("!tup", yaml.UnsafeLoader.construct_python_tuple)
+        yaml.UnsafeLoader.add_constructor("!range", __range_cons)
+        yaml.UnsafeLoader.add_constructor("!inc", __inc_cons)
+        yaml.UnsafeLoader.add_multi_constructor(__OBJ_TAG, __obj_cons)
+        setattr(read_config, "__constructors_not_registered", False)
+    
     config = []
     for path in paths:
         with open(path, 'r') as stream:
             loader = yaml.UnsafeLoader(stream)
-        loader.add_constructor("!tup", __tup_cons)
-        loader.add_constructor("!range", __range_cons)
-        loader.add_constructor("!inc", __inc_cons)
-        loader.add_multi_constructor(__OBJ_TAG, __obj_cons)
         try:
             while loader.check_data():
                 config.append(loader.get_data())

@@ -404,7 +404,7 @@ def action_render_level_sample_ms(args: argparse.Namespace):
     from collections import defaultdict
     import numpy as np
     from . import utils
-    from games import create_game, img_utils
+    from games import GameConfig, img_utils
     
     levels_glob_path: str = args.levels
     outputs_path: str = args.output
@@ -423,11 +423,11 @@ def action_render_level_sample_ms(args: argparse.Namespace):
         assert training_config_path is not None, "The training configuation file is needed to know the conditions and/or the game"
         training_config = config_tools.read_config(training_config_path)
     if game_path == "":
-        game_config = training_config.game_config
+        game_config: GameConfig = training_config.game_config
     else:
-        game_config = utils.access_yaml(game_path)
+        game_config: GameConfig = utils.access_yaml(game_path)
 
-    game = create_game(game_config)
+    game = game_config.create()
 
     levels_files = glob.glob(levels_glob_path)
     level_groups = defaultdict(list)
@@ -478,8 +478,11 @@ Arguments:
     * The path where the statistics will be saved (without extension since a suffix will be added).
     * The number of levels to render in a sample (this specifies the number of percentiles).
     * A list of properties at which the percentiles will be picked.
-    * -g, --game: a path to the game config. If not specified, a training config will be searched for in the levels' parents.
-    * -f, --figure: Pick whether a matplotlib figure where the property names and values will be rendered alongside the level should be generated. (Default: False).
+    * -g, --game: a path to the game config. If not specified, a training config will be searched 
+                for in the levels' parents.
+    * -f, --figure: Pick whether a matplotlib figure where the property names and values will be
+                rendered alongside the level should be generated. (Default: False).
+    * -s, --seed: a random seed for shuffling before sorting. (Default: 69)
 
 If the number of levels is:
 1: The median will be rendered.
@@ -492,11 +495,11 @@ The generated file will be suffixed with "_{height}x{width}.png" or "_{height}x{
 '''
 
 def action_render_percentile_levels_ms(args: argparse.Namespace):
-    import json, pathlib, yaml, glob, warnings
+    import json, pathlib, yaml, glob, warnings, random
     from collections import defaultdict
     import numpy as np
     from . import utils
-    from games import create_game, img_utils
+    from games import GameConfig, img_utils
     
     levels_glob_path: str = args.levels
     outputs_path: str = args.output
@@ -504,6 +507,7 @@ def action_render_percentile_levels_ms(args: argparse.Namespace):
     sample_count: int = args.count
     properties = args.properties
     as_figure = args.figure
+    random.seed(args.seed)
 
     assert sample_count >= 1, "sample count cannot be less than 0"
     percentiles = [0.5]
@@ -522,11 +526,11 @@ def action_render_percentile_levels_ms(args: argparse.Namespace):
         assert training_config_path is not None, "The training configuation file is need to know the conditions and/or the game"
         training_config = config_tools.read_config(training_config_path)
     if game_path == "":
-        game_config = training_config.game_config
+        game_config: GameConfig = training_config.game_config
     else:
-        game_config = utils.access_yaml(game_path)
+        game_config: GameConfig = utils.access_yaml(game_path)
 
-    game = create_game(game_config)
+    game = game_config.create()
 
     levels_files = glob.glob(levels_glob_path)
     level_groups = defaultdict(list)
@@ -551,6 +555,7 @@ def action_render_percentile_levels_ms(args: argparse.Namespace):
         samples = []
         values = []
         for prop_name in properties:
+            random.shuffle(info)
             info.sort(key=(lambda item: item[prop_name]))
             count = len(info)
             indices = [round(p*(count-1)) for p in percentiles]
@@ -602,6 +607,7 @@ def register_render_percentile_levels_ms(parser: argparse.ArgumentParser):
     parser.add_argument("properties", nargs="+", type=str, help="the properties on which the percentiles are selected")
     parser.add_argument("-g", "--game", type=str, default="", help="the game configuration")
     parser.add_argument("-f", "--figure", action="store_true", default=False, help="Pick if the output should be printed as a figure")
+    parser.add_argument("-s", "--seed", type=int, default=69, help="the random seed for shuffling before sorting")
     parser.set_defaults(func=action_render_percentile_levels_ms)
 
 #####################################
@@ -614,7 +620,7 @@ Arguments:
     * The tileset size (type: int).
     * The condition (control vector) size (type: int).
     * -b, --batch: the size of the test batch. (Default: 1).
-    * -r, --repeat: The number of profiling repetitions. Increase to improve the precision. (Default: 100).
+    * -r, --repeat: The number of profiling repetitions. Increase to improve the precision. (Default: 1000).
     * -cfg & -ovr: The generation configuration used for profiling.
 
 This action does not save anyting. The results are printed on the console.
@@ -661,11 +667,11 @@ def action_profile_generator_time_ms(args: argparse.Namespace):
         A[size_index, 1] = h * w
         b[size_index] = elapsed
 
-        print(f"Done in {elapsed} secs")
+        print(f"Generation time / Level = {elapsed} secs")
     
     x, *_ = torch.linalg.lstsq(A, b)
 
-    print(f"Time Estimate = {x[0]} + wh * {x[1]}")
+    print(f"Time Estimate = {x[0]} + wh * {x[1]} secs")
     print(f"Correlation Coefficient = { torch.corrcoef(torch.stack([A[:,1], b]))[0, 1] }")
 
 def register_profile_generator_time_ms(parser: argparse.ArgumentParser):
@@ -673,6 +679,6 @@ def register_profile_generator_time_ms(parser: argparse.ArgumentParser):
     parser.add_argument("tileset", type=int, help="the tileset size")
     parser.add_argument("condition", type=int, help="the condition size")
     parser.add_argument("--batch", "-b", type=int, default=1, help="the batch size")
-    parser.add_argument("--repeat", "-r", type=int, default=100, help="the number of repetitions")
+    parser.add_argument("--repeat", "-r", type=int, default=1000, help="the number of repetitions")
     config_tools.add_config_arguments(parser)
     parser.set_defaults(func=action_profile_generator_time_ms)

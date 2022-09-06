@@ -1,13 +1,34 @@
 from collections import deque
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
+
+"""
+This is a secondary solver used for tasks that are not supported by the C-Solver (Sokosolve).
+This includes:
+- Counting the number of pushed crates.
+- Constructing a High-level plan from the primitive actions.
+"""
 
 class SokobanSolver:
+    # The 'action_ascii' is a string of all the characters used to present a solution.
+    # r, l, d, u represents moving right, left, down, up.
+    # The upper case version is used when action lead to pusing a crate (for the sake of convenience). 
     action_ascii = 'rlduRLDU'
     action_to_index = {'r': 0, 'l': 1, 'd': 2, 'u': 3, 'R': 4, 'L': 5, 'D': 6, 'U': 7}
     action_to_angle = {'r': 0, 'u': 90, 'l': 180, 'd': 270}
     angle_to_action = {angle: action for action, angle in action_to_angle.items()}
 
     def __init__(self, level, return_states: bool = False, iteration_limit: Optional[int]=None) -> None:
+        """Construct a solver for a given level.
+
+        Parameters
+        ----------
+        level : _type_
+            The level to solve.
+        return_states : bool, optional
+            Whether the solution should include all the intermediate states, by default False
+        iteration_limit : Optional[int], optional
+            The maximum number of iterations before thr search is terminated and marked as a failure, by default None
+        """
         self.h = len(level)
         self.w = len(level[0])
         wh, ww = self.h+2, self.w+2
@@ -55,6 +76,7 @@ class SokobanSolver:
             return False
         return True
     
+    # Marks locations from which crates can be pushed.
     def __fill_nonlocked(self, nonlocked: bytearray, position: int):
         nonlocked[position] = True
         for d in self.directions:
@@ -65,6 +87,7 @@ class SokobanSolver:
                 continue
             self.__fill_nonlocked(nonlocked, new)
 
+    # creates a level (2D array) from a search state
     def __reconstruct_state(self, state):
         player, crates = state
         level = [[0] * self.w for _ in range(self.h)]
@@ -91,6 +114,7 @@ class SokobanSolver:
             position += 2
         return level
 
+    # traces back through the search data structures to extract the solution
     def __construct_solution(self, visited, goal):
         solution = []
         parent = goal
@@ -101,6 +125,8 @@ class SokobanSolver:
                 return
             solution.append(self.action_ascii[action])
     
+    # traces back through the search data structures to extract the solution
+    # and all the intermediate levels along the solution path
     def __construct_solution_and_states(self, visited, goal):
         solution = []
         states = [self.__reconstruct_state(goal)]
@@ -114,6 +140,7 @@ class SokobanSolver:
             solution.append(self.action_ascii[action])
             states.append(self.__reconstruct_state(parent))
     
+    # Check if the new crate location will lead to a 2x2 deadlock
     def __check_single_2x2_blocks(self, crates: bytes, pos: int, dir: int):
         ortho = self.w + 3 - abs(dir)
         unsafe = 0 if self.goals[pos] else 1
@@ -131,6 +158,7 @@ class SokobanSolver:
             if unsafe_local != 0: return True
         return False
     
+    # Check if there are any 2x2 deadlocks
     def __check_all_2x2_blocks(self):
         pos = 0
         down = self.w + 2
@@ -168,6 +196,8 @@ class SokobanSolver:
         return False
 
     def solve(self):
+        """Solve the level and store the solution inside self.solution (and self.states if return_states is True).
+        """
         walls = self.walls
         goals = self.goals
         directions = self.directions
@@ -227,6 +257,18 @@ class SokobanSolver:
         self.iterations = iterations
 
     def compute_pushed_crates(self, solution: str) -> int:
+        """Count the number of crates pushed while applying the given solution.
+
+        Parameters
+        ----------
+        solution : str
+            The solution as a string of actions.
+
+        Returns
+        -------
+        int
+            The number of pushed crates.
+        """
         crates = bytearray(self.crates)
         crate_locations = [index for index, is_crate in enumerate(crates) if is_crate]
         crate_ids = {location: cid for cid, location in enumerate(crate_locations)}
@@ -246,7 +288,24 @@ class SokobanSolver:
                 crate_ids[new_crate] = crate_ids[player]
         return len(pushed_crates)
     
-    def build_high_level_plan(self, solution: str) -> int:
+    def build_high_level_plan(self, solution: str) -> List[Dict[str, Any]]:
+        """Converts a string of primitive actions into a high level plan.
+        A high action is represented using:
+        1-  "crate":        The ID for the crate to move. (we don't return which crate starts at which place, 
+                            since we don't need it right now. It could be useful to implement later.)
+        2-  "direction":    The direction in which the crate should be pushed.
+        3-  "count":        The number of pushes in this action.
+
+        Parameters
+        ----------
+        solution : str
+            The string of primitive actions.
+
+        Returns
+        -------
+        List[Dict[str, Any]]
+            A list of high level actions.
+        """
         crates = bytearray(self.crates)
         crate_ids = {index: None for index, is_crate in enumerate(crates) if is_crate}
         directions = self.directions
@@ -283,7 +342,22 @@ class SokobanSolver:
         return plan
     
     @staticmethod
-    def normalize_plan(plan):
+    def normalize_plan(plan: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Given a high level plan (as described in the docs for 'build_high_level_plan'),
+        this function rotates it till the first action direction is right, then flips it
+        if the first vertical action is down.
+        The goal is to make the plan invariant to flipping and rotation.
+
+        Parameters
+        ----------
+        plan : List[Dict[str, Any]]
+            A list of high level actions.
+
+        Returns
+        -------
+        List[Dict[str, Any]]
+            A list of high level actions after normalizations.
+        """
         if len(plan) == 0: return plan
         angles = [SokobanSolver.action_to_angle[a["direction"]] for a in plan]
         diff = 360 - angles[0]

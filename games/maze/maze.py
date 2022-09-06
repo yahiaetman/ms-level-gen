@@ -4,13 +4,22 @@ from games.game import Game, Level, ConditionUtility
 import random
 from .utils import *
 
+"""
+The Maze game implementation.
+
+Tileset:
+--------
+.   empty
+W   wall
+"""
+
 class Maze(Game):
     def __init__(self, **kwargs) -> None:
         super().__init__("MAZE", '.w', "games/maze/sprites.png")
     
     @property
     def possible_augmentation_count(self) -> int:
-        return 4
+        return 4 # 2 for the vertical flipping x 2 for the horizontal flipping
     
     def augment_level(self, level: Level, augnmentation_bits: Optional[int] = None) -> Level:
         if augnmentation_bits is None: augnmentation_bits = random.randint(0, 1<<2 - 1)
@@ -21,7 +30,7 @@ class Maze(Game):
         return level
     
     def generate_random(self, level_count: int, size: Tuple[int, int], **kwargs) -> List[Level]:
-        return super().generate_random(level_count, size)
+        return super().generate_random(level_count, size) # Randomly selects tiles and every tile has an equal probability
     
     def analyze(self, levels: List[Level], **kwargs) -> List[Dict[str, Any]]:
         results = []

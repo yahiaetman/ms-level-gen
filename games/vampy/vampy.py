@@ -4,21 +4,38 @@ from games.game import Game, Level, ConditionUtility
 import random
 from .utils import *
 
+"""
+The Vampy game implementation.
+
+In this game, the player is a vampire and it has to reach its coffin without touching the sun.
+Luckily, the wall can block the sun. So if the sun light is coming from top, the player is safe
+as long as there is a wall in any tile above it. In addition, the player can choose to stand in place
+till the sun does a 90-degree (clockwise) rotation so that it changes the direction it comes from, in
+which case the player is now safe as long as it is cover by a wall in that new direction.  
+
+Tileset:
+--------
+.   empty
+W   wall
+g   goal
+A   player
+"""
+
 class Vampy(Game):
     def __init__(self, **kwargs) -> None:
         super().__init__("VAMPY", '.wgA', "games/vampy/sprites.png")
     
     @property
     def possible_augmentation_count(self) -> int:
-        return 1
+        return 1 # No augmentations are possible since the sun light is always comming from the top at the game's start.
     
     def augment_level(self, level: Level, augnmentation_bits: Optional[int] = None) -> Level:
         return level
     
     def generate_random(self, level_count: int, size: Tuple[int, int], *, mode: str = "basic") -> List[Level]:
-        if mode == "basic":
+        if mode == "basic": # Randomly selects tiles and every tile has an equal probability
             return super().generate_random(level_count, size)
-        elif mode == "naive":
+        elif mode == "naive": # Randomly selects tiles but each tile has a different probability according to how much it is expected to appear
             h, w = size
             area = h * w
             enemies = enemies or max(w, h)
@@ -27,7 +44,7 @@ class Vampy(Game):
             all_tiles_weights = [EMPTY_PROP, WALL_PROP, DOOR_PROP, PLAYER_PROP]  
             all_tiles = list(range(len(self.tiles)))
             return [[random.choices(all_tiles, all_tiles_weights, k=w) for _ in range(h)] for _ in range(level_count)]
-        elif mode == "compilable":
+        elif mode == "compilable": # The tiles are added while making sure it satisfies the compilability constraints (e.g., only one player is allowed).
             levels = []
             for _ in range(level_count):
                 locations = {(j,i) for j in range(h) for i in range(w)}

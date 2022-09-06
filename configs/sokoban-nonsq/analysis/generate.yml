@@ -1,12 +1,12 @@
 generation_sizes:
-- !tup [3, 3]
-- !tup [4, 4]
-- !tup [5, 5]
-- !tup [3, 5]
-- !tup [5, 3]
-- !tup [6, 6]
-- !tup [6, 4]
-- !tup [4, 6]
-- !tup [7, 7]
+  !tup [3, 3]: 'it'
+  !tup [4, 4]: 'it'
+  !tup [5, 5]: 'it'
+  !tup [3, 5]: 'it'
+  !tup [5, 3]: 'it'
+  !tup [6, 6]: 'it'
+  !tup [6, 4]: 'oot'
+  !tup [4, 6]: 'oot'
+  !tup [7, 7]: 'oot'
 generation_amount: 10000
 trials: 1

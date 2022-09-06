@@ -1,10 +1,29 @@
 from collections import deque
-from typing import Optional
+from typing import List, Optional, Tuple
+
+"""
+This is a BFS Solver for Danger Dave.
+It also checks if every diamond is reachable.
+"""
 
 class DaveSolver:
+    # The actions stand for 'move right', 'move left', 'do nothing', 'jump'.
     action_ascii = 'rl.j'
 
     def __init__(self, level, air_time: int = 3, hang_time: int = 1, iteration_limit: Optional[int]=None) -> None:
+        """Construct a solver for a given level.
+
+        Parameters
+        ----------
+        level : _type_
+            The level to solve.
+        air_time : int, optional
+            The maximum time spent in the air after jumping till the player starting falling down, by default 3
+        hang_time : int, optional
+            The time after the player hits a ceiling while jumping till the player starting falling down, by default 1
+        iteration_limit : Optional[int], optional
+            The maximum number of iterations before thr search is terminated and marked as a failure, by default None
+        """
         self.air_time = air_time
         self.hang_time = hang_time
         self.h = len(level)
@@ -52,6 +71,7 @@ class DaveSolver:
             return False
         return True
 
+    # traces back through the search data structures to extract the solution
     def __construct_solution(self, visited, goal):
         solution = []
         parent = goal
@@ -61,16 +81,37 @@ class DaveSolver:
                 return ''.join(solution[::-1])
             solution.append(action)
     
-    def solve(self):
+    def solve(self) -> Optional[str]:
+        """Checks that every diamonds is reachable then find the shortest sequence of actions
+        to win the level (get the key then go to the door). 
+
+        Returns
+        -------
+        Optional[str]
+            The sequence of actions to get the key then go to the door.
+            If no solution is found, it returns None.
+        """
         key_location = next(iter(self.keys))
         goal_location = next(iter(self.goals))
         diamonds = self.diamonds
         for diamond in diamonds:
-            #print('D', self.get_path_through([diamond]))
             if self.get_path_through([diamond]) is None: return None
         return self.get_path_through([key_location, goal_location])
 
-    def get_path_through(self, points):
+    def get_path_through(self, points: List[Tuple[int, int]]) -> Optional[str]:
+        """Gets the sequence of actions to reach all the given points in order starting at the player's initial location.
+
+        Parameters
+        ----------
+        points : List[Tuple[int, int]]
+            The list of points that player must go through in order.
+
+        Returns
+        -------
+        Optional[str]
+            The sequence of actions to go through all the given points in order.
+            If no solution is found, it returns None.
+        """
         open = self.open
         spikes = self.spikes
         
@@ -124,6 +165,7 @@ class DaveSolver:
                     return self.__construct_solution(visited, child)
         return None
 
+# Testing code
 if __name__ == "__main__":
     levels = ["""
     .........$g
@@ -168,7 +210,6 @@ if __name__ == "__main__":
     """]
     for level in levels:
         level = level.strip().lower().splitlines(keepends=False)
-        #print([[tile for tile in row if tile not in '.w+ga$*'] for row in level])
         level = [['.w+ga$*'.index(tile) for tile in row.strip()] for row in level]
         solver = DaveSolver(level)
         print(solver.solve())
