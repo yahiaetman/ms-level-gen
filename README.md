@@ -4,6 +4,8 @@
   <img src="docs/cover.png" />
 </p>
 
+Original Image by [José-Manuel Benitos](https://commons.wikimedia.org/wiki/User:Locutus_Borg) ([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)).
+
 ## About
 
 This repository contains the code for the paper "Start Small: Training Level Generators from Nothing by Learning at Multiple Sizes". It proposes as method to train level generators from nothing by starting at a small size. The method makes the following assumption:
@@ -16,7 +18,16 @@ For the first assumption, we are yet to face a game that does not satisfy it. Fo
 - Generate levels at sizes that were not seen during training (but the performance is usually better if the model was trained on the targeted size).
 - Control the generator's output by supplying the desired properties as inputs to the model.
 
-## Code Structure
+## Table of Content
+
+  - [Code Organization](#code-organization)
+  - [Method Structure](#method-structure)
+  - [Adding a new Game](#adding-a-new-game)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Citation](#citation)
+
+## Code Organization
 
 The code is divided as follows:
 - `cli.py`: whichs is the main entry point that can be used to invoke the different actions defined in the folder `actions`.
@@ -105,6 +116,57 @@ There are still more scripts that are available, so it would become tedious to r
 Note that this script requires the game name to pick some analysis options. If you want to run all the experiments in the paper (including the analysis steps), you can just run [paper_experiments.ps1](paper_experiments.ps1) but note that it runs 30 experiments so it would probably require multiple days to finish depending on your machine.
 
 To explore the results of the generators by hand, you can run them and try different control values and level sizes in the jupyter notebook [explore.ipynb](explore.ipynb).
+
+## Level Samples
+
+The following samples have been randomly picked from the playable portion of the generated levels.
+
+---
+
+<h1 align="center">
+Sokoban
+</h1>
+<p align="center">
+  <img src="docs/samples/sokoban/images_solvable_5x5.png" />
+  <img src="docs/samples/sokoban/images_solvable_6x6.png" />
+  <img src="docs/samples/sokoban/images_solvable_7x7.png" />
+</p>
+
+---
+
+<h1 align="center">
+Zelda
+</h1>
+<p align="center">
+  <img src="docs/samples/zelda/images_solvable_7x11.png" />
+  <img src="docs/samples/zelda/images_solvable_8x12.png" />
+  <img src="docs/samples/zelda/images_solvable_9x13.png" />
+</p>
+
+---
+
+<h1 align="center">
+Danger Dave
+</h1>
+<p align="center">
+  <img src="docs/samples/dave/images_solvable_7x11.png" />
+  <img src="docs/samples/dave/images_solvable_8x12.png" />
+  <img src="docs/samples/dave/images_solvable_9x13.png" />
+</p>
+
+## Citation
+
+If you find this method useful, consider citing this work:
+
+**NOTE: To be completed later.**
+
+```
+@Article{msgen,
+  author  = {Zakaria, Yahia and Fayek, Magda and Hadhoud, Mayada},
+  title   = {Start Small: Training Level Generators from Nothing by Learning at Multiple Sizes},
+}
+
+```
 
 ## License
 
