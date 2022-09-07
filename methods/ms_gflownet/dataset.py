@@ -179,7 +179,7 @@ class Dataset:
         added = [False]*len(new_info)
 
         for index, info in enumerate(new_info):
-            if not info["compilable"]:
+            if not info.get("compilable", True):
                 log_rewards[index] = bad_level_log_reward
                 continue
             compilable_count += 1

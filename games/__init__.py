@@ -3,21 +3,33 @@ from typing import Any, Dict
 
 from common.config_tools import config
 from .game import Game
-from .dave.dave import Dave
-from .maze.maze import Maze
-from .maze2.maze2 import Maze2
-from .sokoban.sokoban import Sokoban
-from .vampy.vampy import Vampy
-from .zelda.zelda import Zelda
 from . import utils # Don't remove, this left here to be used by other files
 
+def __game_getter(mod: str, cls: str):
+    """To avoid importing all the games, this function returns
+    a function that imports the game class on demand.
+
+    Parameters
+    ----------
+    mod : str
+        The relative module path that contains the game class
+    cls : str
+        The class name
+
+    Returns
+    -------
+    Callable[Type[Game]]
+        A function that returns the game class
+    """
+    return lambda: getattr(__import__(mod, globals(), locals(), level=1, fromlist=[cls]), cls)
+
 GAMES = {
-    "dave": Dave,
-    "maze": Maze,
-    "maze2": Maze2,
-    "sokoban": Sokoban,
-    "vampy": Vampy,
-    "zelda": Zelda,
+    "dave": __game_getter("dave.dave", "Dave"),
+    "maze": __game_getter("maze.maze", "Maze"),
+    "maze2": __game_getter("maze2.maze2", "Maze2"),
+    "sokoban": __game_getter("sokoban.sokoban", "Sokoban"),
+    "vampy": __game_getter("vampy.vampy", "Vampy"),
+    "zelda": __game_getter("zelda.zelda", "Zelda"),
 }
 
 @config
@@ -38,4 +50,5 @@ class GameConfig:
         Game
             The created game.
         """
-        return GAMES[self.name.lower()](**self.options)
+        cls = GAMES[self.name.lower()]()
+        return cls(**self.options)

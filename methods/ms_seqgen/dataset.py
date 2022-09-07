@@ -134,7 +134,7 @@ class Dataset:
         added = [False]*len(new_info)
 
         for index, info in enumerate(new_info):
-            if not info["compilable"]: continue
+            if not item.get("compilable", True): continue
             compilable_count += 1
             if not info["solvable"]: continue
             solvable_count += 1

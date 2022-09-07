@@ -56,7 +56,7 @@ def compute_statistics(info: List[Dict], config: Dict):
     import numpy as np
 
     total = len(info)
-    compilable = [item for item in info if item["compilable"]]
+    compilable = [item for item in info if item.get("compilable", True)]
     solvable = [item for item in compilable if item["solvable"]]
     solvable_count = len(solvable)
     levels = [item["level"] for item in solvable]
@@ -210,7 +210,7 @@ def compute_ctrl_statistics(info: List[Dict], tolerences: Dict[str, float]):
     for control_name, info in level_groups.items():
         tolerence = tolerences.get(control_name, 1)
         total = len(info)
-        compilable = [item for item in info if item["compilable"]]
+        compilable = [item for item in info if item.get("compilable", True)]
         solvable = [item for item in compilable if item["solvable"]]
         solvable_count = len(solvable)
         control_values = [item["control-value"] for item in solvable]

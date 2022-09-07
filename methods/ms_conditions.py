@@ -517,7 +517,7 @@ class GMMConditionModel(ControllableConditionModel):
             if bounds is None:
                 bounds = tuple(
                     torch.tensor(bound) 
-                    for bound in zip(*(self.condition_utility.get_range_estimates(name, size) for name in conditions))
+                    for bound in zip(*(self.condition_utility.get_range_estimates(name, size) for name in self.conditions))
                 )
                 self.range_estimates[size] = bounds
             conditions = torch.lerp(*bounds, torch.rand((batch_size, len(self.conditions))))

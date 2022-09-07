@@ -132,7 +132,7 @@ class Game(ABC):
             A string containing the characters for all the game's tiles.
             The order is relevant since the integer assigned to each tile is its index in this string.
         sprite_atlas_path : str
-            The path to the sprite atlas image. The sprites must have the size 16x16 and be arranged
+            The path to the sprite atlas image. The sprites must have the same size and be arranged
             in a single row without padding in the same order of the tiles string.
         dataset_postprocessors : Optional[Dict[str, DatasetPostProcessor]], optional
             A dictionary of functions that can be used to postprocess a level dataset. (Default: None)
@@ -264,15 +264,7 @@ class Game(ABC):
 
         The dictionary should at least contain the following:
         - level: the level itself.
-        - compilable: a boolean stating if this level could be run by the game, regardless of
-            whether it can be won or not. Usually, we use this to check for some basic constraints 
-            that are easier to verify than the level solvability. For example, we define that a 
-            Sokoban level to be compilable if there is only one player, the number of crates and 
-            goals are equal and at least one crate is not on a goal. If this is not relevant, you 
-            can set it be always true or any value as long as all the solvable levels are defined
-            as compilable. This is mainly used to track some statistics and does not affect the 
-            training process as long as it satisfies the aforementioned constraint.
-        - playable: a boolean stating if this level can be won. If it is impossible to win, it
+        - solvable: a boolean stating if this level can be won. If it is impossible to win, it
             should be false.
 
         Parameters
@@ -285,7 +277,7 @@ class Game(ABC):
         List[Dict[str, Any]]
             A list of information about the given levels.
         """
-        return [{"level": level, "compilable": False, "playable": False} for level in levels]
+        return [{"level": level, "solvable": False} for level in levels]
 
     @property
     def possible_augmentation_count(self) -> int:
@@ -345,21 +337,22 @@ class Game(ABC):
         Returns
         -------
         np.ndarray
-            The generated images with the shape (Batch_Size x 3 x 16*Height x 16*Width)
+            The generated images with the shape (Batch_Size x 3 x Sprite_Height * Height x Sprite_Width * Width)
         """
         if self.__sprite_atlas is None: self.__sprite_atlas = load_sprite_atlas(self.__sprite_atlas_path)
         sprite_atlas = self.__sprite_atlas
         assert levels.ndim >= 2, f"Expected levels to have 2 or more dimensions, get {levels.ndim} dimensions"
         if levels.ndim == 2: return self.render(levels[None,:,:])[0]
         *n, h, w = levels.shape
-        images = np.empty((*n, 3, h*16, w*16), dtype=sprite_atlas.dtype)
+        *_, sh, sw = self.__sprite_atlas.shape
+        images = np.empty((*n, 3, h*sh, w*sw), dtype=sprite_atlas.dtype)
         for index in np.ndindex(*n):
             level = levels[index]
             image = images[index]
             for i, row in enumerate(level):
-                image_row = image[:, i*16:(i+1)*16]
+                image_row = image[:, i*sw:(i+1)*sw]
                 for j, tile in enumerate(row):
-                    image_row[:, :, j*16:(j+1)*16] = sprite_atlas[tile]
+                    image_row[:, :, j*sh:(j+1)*sh] = sprite_atlas[tile]
         if padding is None:
             return images
         return np.pad(images, pad_width=((0,0),)*len(n) + ((0,0),(padding,padding),(padding,padding)), constant_values=255)

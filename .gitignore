@@ -61,6 +61,7 @@ target/
 
 # Outputs
 runs/
+experiments/
 
 # Unwanted
 backup/
