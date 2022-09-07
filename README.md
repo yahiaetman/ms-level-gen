@@ -1,4 +1,4 @@
-# Start Small: Training Level Generator from Nothing by Learning at Multiple Sizes
+# Start Small: Training Level Generators from Nothing by Learning at Multiple Sizes
 
 <p align="center">
   <img src="docs/cover.png" />
@@ -6,7 +6,7 @@
 
 ## About
 
-This repository contains the code for the paper "Start Small: Training Level Generator from Nothing by Learning at Multiple Sizes". It proposes as method to train level generators from nothing by starting at a small size. The method makes the following assumption:
+This repository contains the code for the paper "Start Small: Training Level Generators from Nothing by Learning at Multiple Sizes". It proposes as method to train level generators from nothing by starting at a small size. The method makes the following assumption:
 - The probability of finding playable levels via random exploration is sufficiently high at small level sizes.
 - The generator can gain knowledge from learning at small sizes to start generating levels at lerger sizes.
 
