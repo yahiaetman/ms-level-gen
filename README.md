@@ -25,6 +25,7 @@ For the first assumption, we are yet to try a game that does not satisfy it. For
   - [Adding a new Game](#adding-a-new-game)
   - [Installation](#installation)
   - [Usage](#usage)
+  - [Pretrained Weights](#pretrained-weights)
   - [Generated Level Samples](#generated-level-samples)
   - [Citation](#citation)
   - [License](#license)
@@ -115,9 +116,13 @@ There are still more scripts, so it would become tedious to repeat them after ev
 
     ./analyze.ps1 sokoban ./experiment
 
-Note that this script requires the game name to pick some options. If you want to run all the experiments in the paper (including the analysis steps), you can just run [paper_experiments.ps1](paper_experiments.ps1) but note that it runs 30 experiments so it would probably require multiple days to finish depending on your machine. You can also download weights for the generators and the condition models from [here](https://drive.google.com/file/d/1BOfuYo4BFuJeyIG57d-AQ6q5D9nRUJUz/view?usp=sharing). It only contains the files necessary to run the generators to save space.
+Note that this script requires the game name to pick some options. If you want to run all the experiments in the paper (including the analysis steps), you can just run [paper_experiments.ps1](paper_experiments.ps1) but note that it runs 30 experiments so it would probably require multiple days to finish depending on your machine.
 
 To explore the results of the generators by hand, you can run them, and try different control values and level sizes in the jupyter notebook [explore.ipynb](explore.ipynb).
+
+## Pretrained Weights
+
+You can download weights for the generators and the condition models from [here](https://drive.google.com/file/d/1BOfuYo4BFuJeyIG57d-AQ6q5D9nRUJUz/view?usp=sharing). It only contains the files necessary to run the generators to save space.
 
 ## Generated Level Samples
 
