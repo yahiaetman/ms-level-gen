@@ -23,7 +23,7 @@ condition_model_config: !obj:methods.ms_conditions/KDEConditionModel.Config
     difficulty: !tup [-5, 10]
   diversity_sampling: false
 
-generator_config: !inc "configs/models/snake_ms_ce_gru.yml"
+generator_config: !inc "configs/models/ms_gflownet/snake_ms_ce_gru.yml"
 
 optimizer_config: !obj:methods.ms_gflownet.optimizers/GFlowMSTBOptimizer.Config {}
 

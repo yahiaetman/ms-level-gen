@@ -38,7 +38,7 @@ condition_model_config: !obj:methods.ms_conditions/KDEConditionModel.Config
     !tup [3, 5]: 1
     !tup [5, 3]: 1
 
-generator_config: !inc "configs/models/snake_ms_ce_gru.yml"
+generator_config: !inc "configs/models/ms_gflownet/snake_ms_ce_gru.yml"
 
 optimizer_config: !obj:methods.ms_gflownet.optimizers/GFlowMSTBOptimizer.Config {}
 

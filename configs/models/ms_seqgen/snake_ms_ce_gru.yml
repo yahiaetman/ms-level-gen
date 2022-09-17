@@ -1,0 +1,5 @@
+!obj:methods.ms_seqgen.models/SnakeMSCEGen.Config
+cell_type: "GRU"
+layer_count: 2
+layer_size: 128
+embedding_size: 32
