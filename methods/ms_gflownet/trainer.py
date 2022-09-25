@@ -1,8 +1,8 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os, datetime, pathlib
 import time
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import warnings
 
 import torch
@@ -39,6 +39,8 @@ class Trainer:
         - "training_steps":         the number of training steps (each step goes through every training size).
         - "batch_size":             the training batch size.
         - "checkpoint_period":      the number of steps before new checkpoints of the optimizer and dataset are saved.
+        - "seed_count":             the number of sizes (from the start of the "sizes" list) that are seeds.
+        - "stop":                   the config for each size to stop smaller sizes from being trained on after a certain condition is satisfied.
         - "sample_render_period":   the number of steps before the generated level batch is rendered and sent to tensorboard.
         - "heatmap_config":         the heatmap configuration.
         - "heatmap_render_period":  the number of steps before a new heatmap set is rendered and sent to tensorboard.
@@ -57,6 +59,8 @@ class Trainer:
         training_steps: int
         batch_size: int
         checkpoint_period: int
+        seed_count: int = 1
+        stop: Dict[Tuple[int, int], Dict] = field(default_factory=lambda:{})
         sample_render_period: int = 10
         heatmap_config: Optional[Heatmaps.Config] = None
         heatmap_render_period: int = 100
@@ -133,10 +137,31 @@ class Trainer:
 
         start_time = time.time() - self.elapsed_time # We subtract the elapsed time to handle training resumptions.
 
+        stopped = [False]*len(self.dataset.sizes) # Store whether each size has been stopped from training or not
+        stop_functions = [(lambda *_: None)]*len(self.dataset.sizes)    # Stores a function for each size that checks for the
+                                                                        # stopping condition, then stops the targeted sizes. 
+        for size_index, size in enumerate(self.dataset.sizes):
+            stop_config = self.config.stop.get(size)
+            if stop_config is None: continue
+            
+            condition_str = stop_config.get("condition", "len(trainer.dataset.items[size]) != 0") 
+            condition = eval(f"lambda trainer, step, size: {condition_str}")
+            target_count = stop_config.get("target_count", size_index) # by default, the size stops all the sizes below it.
+            
+            def stop_function(step: int):                
+                if condition(self, step, size):
+                    stop_functions[size_index] = lambda *_: None
+                    for index in range(target_count):
+                        stopped[index] = True
+            
+            stop_functions[size_index] = stop_function
+
         pbar = tqdm.tqdm(total=self.config.training_steps, initial=self.starting_step-1, desc="Start..", dynamic_ncols=True)
         for step in range(self.starting_step, self.config.training_steps+1):
 
             for size_index, size in enumerate(self.dataset.sizes):
+
+                if stopped[size_index]: continue
 
                 pbar.set_description(f"{size}: Query Conditions...")
                 query_conditions = self.condition_model.sample(size, batch_size)
@@ -155,12 +180,14 @@ class Trainer:
                 
                 pbar.set_description(f"{size}: Update Cond-Model..")
                 self.condition_model.update(size, [item for item, is_added in zip(info, added_mask) if is_added])
+
+                stop_functions[size_index](step)
                 
                 losses, log_z0s = {}, {}
 
                 # Other than the seed size (the first size), all the other sizes are not trained until a certain
                 # number of cluster for them already exists.
-                if size_index == 0 or len(self.dataset.clusters[size]) >= self.dataset.config.cluster_threshold.get(size, 1):
+                if size_index < self.config.seed_count or len(self.dataset.clusters[size]) >= self.dataset.config.cluster_threshold.get(size, 1):
                     pbar.set_description(f"{size}: Tell Optimizer.....")
                     loss, log_z0 = self.optG.tell(log_rewards.to(self.device))
                     losses["on-policy"] = loss
