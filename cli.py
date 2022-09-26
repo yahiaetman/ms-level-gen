@@ -2,6 +2,7 @@ import argparse
 from actions.train_actions import register_train, register_resume
 from actions.condition_model_actions import register_generate_condition_model_ms
 from actions.level_generation_actions import register_generate_levels_ms, register_generate_levels_controllable_ms, register_random_generate_levels_ms
+from actions.statistics_actions import register_analyze_levels
 from actions.statistics_actions import register_compute_statistics, register_compute_statistics_ms
 from actions.statistics_actions import register_compute_ctrl_statistics, register_compute_ctrl_statistics_ms
 from actions.statistics_actions import register_generate_expressive_ranges_ms, register_render_level_sample_ms, register_render_percentile_levels_ms
@@ -37,6 +38,8 @@ def main():
     # Generate levels randomly
     register_random_generate_levels_ms(subparsers.add_parser("random-generate-levels-ms", aliases=["rngms"]))
     
+    # Analyze levels stored in a certain file
+    register_analyze_levels(subparsers.add_parser("analyze-levels", aliases=["analyze"]))
     # Compute statistics for a certain file of generated levels
     register_compute_statistics(subparsers.add_parser("compute-statistics", aliases=["stats"]))
     # Compute statistics for one or more files of generated levels

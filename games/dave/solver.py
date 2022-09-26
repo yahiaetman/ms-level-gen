@@ -168,6 +168,14 @@ class DaveSolver:
 # Testing code
 if __name__ == "__main__":
     levels = ["""
+    WWWWWWW
+    W*WWW*W
+    W.WWW.W
+    W+.*.$W
+    W.....W
+    Wg.W.AW
+    WWWWWWW
+    """, """
     .........$g
     .+.......WW
     .WW...$....

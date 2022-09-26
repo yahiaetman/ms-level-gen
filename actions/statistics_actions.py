@@ -93,6 +93,54 @@ def compute_statistics(info: List[Dict], config: Dict):
 #####################################
 #####################################
 '''
+Analyze levels stored in a file
+
+Arguments:
+    * The game config for which the levels are designed.
+    * The path to the levels (json or txt).
+    * The path where the analysis results will be saved.
+
+The output will be a Json file containing the analyzed levels returned by "game.analyze".
+'''
+
+def action_analyze_levels(args: argparse.Namespace):
+    import json, pathlib, yaml
+    from games import GameConfig
+
+    game_config_path: str = args.game
+    levels_path: str = args.levels
+    output_path: str = args.output
+
+    game_config: GameConfig = config_tools.read_config(game_config_path)
+    game = game_config.create()
+
+    pathlib.Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    
+    if levels_path.endswith(".json"):
+        info = json.load(open(levels_path, 'r'))
+        levels = [item["level"] for item in info]
+        names = [item.get("name", str(index)) for index, item in enumerate(info)]
+    else:
+        levels, names = game.load_dataset(levels_path) 
+
+    if len(levels) == 0:
+        print("The file is empty, No analysis will be generated.")
+    
+    info = game.analyze(levels)
+    for name, item in zip(names, info):
+        item["name"] = name
+
+    json.dump(info, open(output_path, 'w'))
+
+def register_analyze_levels(parser: argparse.ArgumentParser):
+    parser.add_argument("game", type=str, help="path to the game configuration")
+    parser.add_argument("levels", type=str, help="path to the generated levels")
+    parser.add_argument("output", type=str, help="path to the save the level info")
+    parser.set_defaults(func=action_analyze_levels)
+
+#####################################
+#####################################
+'''
 Compute statistics for level data with a single size.
 
 Arguments:
