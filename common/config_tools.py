@@ -116,6 +116,12 @@ models.Config(learning_rate=0.001, momentum=0.0, hidden_sizes=[128, 64])
 > python test.py -cfg example.yaml no_momentum.yaml -ovr learning_rate:=0.1 "hidden_sizes:=[10, 20, 30]"
 models.Config(learning_rate=0.1, momentum=0.0, hidden_sizes=[10, 20, 30])
 
+File "hidden_sizes.yaml"
+>>> [10, 20, 30]
+
+> python test.py -cfg example.yaml no_momentum.yaml -ovr learning_rate:=0.1 hidden_sizes<=hidden_sizes.yaml
+models.Config(learning_rate=0.1, momentum=0.0, hidden_sizes=[10, 20, 30])
+
 --- Use "!inc" ---
 ------------------
 
@@ -130,17 +136,19 @@ File "example2.yaml"
 > python test.py -cfg example2.yaml
 models.Config(learning_rate=0.001, momentum=0.9, hidden_sizes=[10, 20, 30])
 
+NOTE: You can supply a relative path (relative to the outer file) as follow: !inc '~/hidden_sizes.yaml'
+
 --- Write a config file that extends another file ---
 -----------------------------------------------------
 
 File "example3.yaml"
 >>> !inc: 'example.yaml'
+>>> ---
 >>> !obj:models/Config
 >>> momentum: 0.0
 
 > python test.py -cfg example.yaml
 models.Config(learning_rate=0.001, momentum=0.0, hidden_sizes=[128, 64])
-
 
 """
 
@@ -149,6 +157,7 @@ import yaml
 import dataclasses
 import pathlib
 import argparse
+import re
 
 ###################################
 # Merge two or more configuations #
@@ -425,6 +434,7 @@ def add_config_arguments(parser: argparse.ArgumentParser, config_file_args = Non
         Each override is defined as 'path=value' or 'path:=value'.
         The path defines how to access the object to reach the value to override.
         If the form 'path:=value' is used, value will be passed to the eval function. It is useful for any object that is not a string.
+        If the form 'path<=file_path' is used, the config at 'file_path' will be loaded via 'read_config'. It is useful for overriding large parts of the config.
     """
     config_file_args = config_file_args or ['-cfg', '--config']
     override_args = override_args or ['-ovr', '--override']
@@ -449,15 +459,21 @@ def get_config_from_namespace(args: argparse.Namespace):
     
     overrides = args.override
     if overrides is not None:
+        split_pattern = re.compile("(?<!\\\\)(:=|<=|=)")
+        unescape_pattern = re.compile("\\\\(:=|<=|=)")
+        unescape = lambda s: unescape_pattern.sub((lambda m: m.group(0)[1:]), s)
         updates = {}
         for override in overrides:
-            key, value = override.split('=')
-            if key.endswith(':'):
-                key = key[:-1]
+            key, sep, *values = split_pattern.split(override)
+            value = unescape("".join(values))
+            key = unescape(key)
+            if sep == ":=":
                 try:
                     value = eval(value)
                 except BaseException as e:
                     raise RuntimeError(f"Failed to eval override value '{value}'") from e
+            elif sep == "<=":
+                value = read_config(value)
             updates[key] = value
         config = update_object(config, updates)
     return config

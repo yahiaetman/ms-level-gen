@@ -1,4 +1,4 @@
-# Start Small: Training Level Generators from Nothing by Learning at Multiple Sizes
+# Start Small: Training Game Level Generators from Nothing by Learning at Multiple Sizes
 
 <p align="center">
   <img src="docs/cover.png" />
@@ -8,7 +8,7 @@ Original Image by [José-Manuel Benitos](https://commons.wikimedia.org/wiki/User
 
 ## About
 
-This repository contains the code for the paper "Start Small: Training Level Generators from Nothing by Learning at Multiple Sizes". It proposes a method to train level generators from nothing by starting at a small size. The method makes the following assumptions:
+This repository contains the code for the paper "Start Small: Training Game Level Generators from Nothing by Learning at Multiple Sizes". It proposes a method to train level generators from nothing by starting at a small size. The method makes the following assumptions:
 - The probability of finding playable levels via random exploration is sufficiently high at small level sizes.
 - The generator can gain knowledge from learning at small sizes to start generating levels at larger sizes.
 
@@ -27,8 +27,8 @@ For the first assumption, we are yet to try a game that does not satisfy it. For
   - [Usage](#usage)
   - [Pretrained Weights](#pretrained-weights)
   - [Generated Level Samples](#generated-level-samples)
-  - [Citation](#citation)
   - [License](#license)
+<!---  - [Citation](#citation) --->
 
 ## Code Organization
 
@@ -161,6 +161,7 @@ Danger Dave
   <img src="docs/samples/dave/images_solvable_9x13.png" />
 </p>
 
+<!---
 ## Citation
 
 If you find this method useful, consider citing this work:
@@ -170,10 +171,11 @@ If you find this method useful, consider citing this work:
 ```
 @Article{msgen,
   author  = {Zakaria, Yahia and Fayek, Magda and Hadhoud, Mayada},
-  title   = {Start Small: Training Level Generators from Nothing by Learning at Multiple Sizes},
+  title   = {Start Small: Training Game Level Generators from Nothing by Learning at Multiple Sizes},
 }
 
 ```
+--->
 
 ## License
 
