@@ -90,7 +90,7 @@ def action_generate_levels_ms(args: argparse.Namespace):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     generator: MSGenerator = generator_config.model_constructor(len(game.tiles), len(conditions)).to(device)
-    weights = config_tools.access_object(torch.load(weights_path), key)
+    weights = config_tools.access_object(torch.load(weights_path, map_location=device), key)
     generator.load_state_dict(weights["netG"])
 
     pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
@@ -228,7 +228,7 @@ def action_generate_levels_controllable_ms(args: argparse.Namespace):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     generator: MSGenerator = generator_config.model_constructor(len(game.tiles), len(conditions)).to(device)
-    weights = config_tools.access_object(torch.load(weights_path), key)
+    weights = config_tools.access_object(torch.load(weights_path, map_location=device), key)
     generator.load_state_dict(weights["netG"])
 
     pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)

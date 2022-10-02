@@ -200,7 +200,7 @@ class GFlowMSTBOptimizer:
         path : str
             The path to the checkpoint file.
         """
-        data = torch.load(path)
+        data = torch.load(path, map_location=self.device)
         self.netG.load_state_dict(data["netG"])
         self.optG.load_state_dict(data["optG"])
         netLogZ0_states = data["netLogZ0"]
