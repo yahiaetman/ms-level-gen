@@ -69,7 +69,7 @@ Each game is defined using two classes:
 
 ## Installation
 
-This repository's requirements are defined in [environment.yml](environment.yml).
+This repository requires `Python 3.9` and `Pytorch 1.11`. All the requirements are defined in [environment.yml](environment.yml).
 
 you can either create a new environment from it using:
 
