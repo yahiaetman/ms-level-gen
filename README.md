@@ -8,7 +8,7 @@ Original Image by [José-Manuel Benitos](https://commons.wikimedia.org/wiki/User
 
 ## About
 
-This repository contains the code for the paper "Start Small: Training Game Level Generators from Nothing by Learning at Multiple Sizes". It proposes a method to train level generators from nothing by starting at a small size. The method makes the following assumptions:
+This repository contains the code for the paper ["Start Small: Training Game Level Generators from Nothing by Learning at Multiple Sizes"](https://arxiv.org/abs/2209.15052). It proposes a method to train level generators from nothing by starting at a small size. The method makes the following assumptions:
 - The probability of finding playable levels via random exploration is sufficiently high at small level sizes.
 - The generator can gain knowledge from learning at small sizes to start generating levels at larger sizes.
 
@@ -27,8 +27,8 @@ For the first assumption, we are yet to try a game that does not satisfy it. For
   - [Usage](#usage)
   - [Pretrained Weights](#pretrained-weights)
   - [Generated Level Samples](#generated-level-samples)
+  - [Citation](#citation)
   - [License](#license)
-<!---  - [Citation](#citation) --->
 
 ## Code Organization
 
@@ -161,21 +161,20 @@ Danger Dave
   <img src="docs/samples/dave/images_solvable_9x13.png" />
 </p>
 
-<!---
 ## Citation
 
-If you find this method useful, consider citing this work:
-
-**NOTE: To be completed later.**
+If you find this work useful, please consider citing it:
 
 ```
-@Article{msgen,
-  author  = {Zakaria, Yahia and Fayek, Magda and Hadhoud, Mayada},
-  title   = {Start Small: Training Game Level Generators from Nothing by Learning at Multiple Sizes},
+@misc{msgen,
+  doi = {10.48550/ARXIV.2209.15052},
+  url = {https://arxiv.org/abs/2209.15052},
+  author = {Zakaria, Yahia and Fayek, Magda and Hadhoud, Mayada},
+  title = {Start Small: Training Game Level Generators from Nothing by Learning at Multiple Sizes},
+  publisher = {arXiv},
+  year = {2022}
 }
-
 ```
---->
 
 ## License
 
