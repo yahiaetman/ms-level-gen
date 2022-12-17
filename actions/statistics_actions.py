@@ -64,7 +64,7 @@ def compute_statistics(info: List[Dict], config: Dict):
 
     levels_np = np.array(levels)
     _, h, w = levels_np.shape
-    diversity = sum( np.sum((levels_np[i] != levels_np[i+1:]).astype(int)) for i in range(len(levels)-1) ) / ((w * h) * (solvable_count * (solvable_count - 1)) * 0.5)
+    diversity = sum( np.sum((levels_np[i] != levels_np[i+1:]).astype(np.int64)) for i in range(len(levels)-1) ) / ((w * h) * (solvable_count * (solvable_count - 1)) * 0.5)
     diversity = float(diversity)
     entropies = [games.utils.entropy(level) for level in levels]
 
@@ -307,7 +307,7 @@ def action_compute_ctrl_statistics(args: argparse.Namespace):
         print("The file is empty, No statistics will be generated.")
 
     arb_level = info[0]["level"]
-    h, w = len(arb_level), len[arb_level[0]]
+    h, w = len(arb_level), len(arb_level[0])
     tolerences = {}
     for control_name, control_config in config["controlled_conditions"].items():
         control_tolerences = control_config.get("tolerence", {})
