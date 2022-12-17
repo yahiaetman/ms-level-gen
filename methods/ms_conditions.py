@@ -420,6 +420,7 @@ class GMMConditionModel(ControllableConditionModel):
         n_components: int = 16
         max_iterations: int = 100
         n_init: int = 8
+        add_noise: bool = False
         verbose: int = 0
 
         @property
@@ -462,7 +463,13 @@ class GMMConditionModel(ControllableConditionModel):
         new_info : List[dict]
             The info retrieved by game.analyze for the new levels.
         """
+        
         all_conditions = torch.tensor([[info[name] for name in self.conditions] for info in new_info])
+        if self.config.add_noise:
+            all_conditions += (torch.rand_like(all_conditions) - 0.5) * torch.tensor([
+                2.0 * self.condition_utility.get_tolerence(name, size) for name in self.conditions
+            ])
+
         gmm = BayesianGaussianMixture(
             n_components=self.config.n_components, 
             max_iter=self.config.max_iterations,
@@ -604,3 +611,175 @@ class GMMConditionModel(ControllableConditionModel):
     
     def load(self, path: str):
         self.gmms = torch.load(path)
+
+############################
+############################
+
+from .minf import MultivariateFlowMixture
+
+# This class is not meant to be used during training
+class MINFConditionModel(ControllableConditionModel):
+    """This condition model fits a Mixture of Independent Normalizing Flows (MINF) using the given level data.
+    It is not meant to be used during training since it can be updated incrementally. 
+    """
+    @config
+    @dataclass
+    class Config:
+        """The MINF Condition model configuration.
+
+        It contains:
+        - "snap": should the sampled conditions be snapped to nearest valid value?
+        - "n_components": the number of flows in the mixture.
+        - "n_layers": the number of layers in each flow.
+        - "n_bins": the number of bins in each spline in the flow.
+        - "batch_size": the batch size for training.
+        - "epochs": the number of training epochs iterations.
+        - "learning_rate": the learning rate of the RMSProp optimizer.
+        - "add_noise": whether to add noise to the data during training or not.
+        - "verbose": the verbosity level of sklearn's fitting process. Currently this does nothing.
+        """
+        snap: bool = False
+        n_components: int = 16
+        n_layers: int = 1
+        n_bins: int = 8
+        batch_size: int = 128
+        epochs: int = 2
+        learning_rate: float = 1e-3
+        add_noise: bool = True
+        verbose: int = 0
+
+        @property
+        def model_constructor(self):
+            """Return a constructor for the condition model
+            """
+            return lambda game, conditions: MINFConditionModel(game, conditions, self)
+        
+    def __init__(self, game: Game, conditions: List[str], config: MINFConditionModel.Config) -> None:
+        """The condition model initializer.
+
+        Parameters
+        ----------
+        game : Game
+            The game used to get the condition utilities.
+        conditions : List[str]
+            The names of the properties corresponding to the conditions.
+        config : MINFConditionModel.Config
+            The condition model configuration.
+        """
+        super().__init__(game, conditions, config)
+        self.config = config
+        
+        self.name = "MINFCOND" # The name is used to create an experiment name.
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        self.range_estimates = {}
+        self.minfs = {}
+        
+    def update(self, size: Tuple[int, int], new_info: List[dict]):
+        """Update the condition model using new level info.
+        IMPORTANT: This condition model discard all previous results of any previous update
+        for the given size since it cannot incrementally update the GMM. So it is not
+        designed to be used during training.
+
+        Parameters
+        ----------
+        size : Tuple[int, int]
+            The levels' size.
+        new_info : List[dict]
+            The info retrieved by game.analyze for the new levels.
+        """
+        
+        all_conditions = torch.tensor([[info[name] for name in self.conditions] for info in new_info])
+        noise = 0
+        if self.config.add_noise:
+            noise = torch.tensor([2.0 * self.condition_utility.get_tolerence(name, size) for name in self.conditions])
+
+        net = MultivariateFlowMixture(len(self.conditions), self.config.n_components, self.config.n_bins, self.config.n_layers).to(self.device)
+        net.fit(all_conditions, self.config.epochs, self.config.batch_size, noise, self.config.learning_rate)
+
+        self.minfs[size] = net
+    
+    def sample(self, size: Tuple[int, int], batch_size: int) -> torch.Tensor:
+        """Sample conditions from the model
+
+        Parameters
+        ----------
+        size : Tuple[int, int]
+            The requested level size to sample conditions for.
+        batch_size : int
+            The number of conditions to sample.
+
+        Returns
+        -------
+        torch.Tensor
+            A tensor of sampled conditions.
+        """
+        if self.minfs:
+            closest_size = find_closest_size(size, self.minfs.keys())
+            net: MultivariateFlowMixture = self.minfs.get(closest_size)
+            if net is None:
+                h, w = size
+                _, _, _, net = min((abs(hi-h)+abs(wi-w), (hi+wi), i, gmmi) for i, ((hi, wi), gmmi) in enumerate(self.net.items()))
+            
+            conditions, _ = net.sample(batch_size)
+        else:
+            bounds = self.range_estimates.get(size)
+            if bounds is None:
+                bounds = tuple(
+                    torch.tensor(bound) 
+                    for bound in zip(*(self.condition_utility.get_range_estimates(name, size) for name in self.conditions))
+                )
+                self.range_estimates[size] = bounds
+            conditions = torch.lerp(*bounds, torch.rand((batch_size, len(self.conditions))))
+        
+        if self.config.snap:
+            for index, snap_function in enumerate(self.snap_functions):
+                conditions[:,index] = snap_function(conditions[:,index], size)
+        
+        return conditions
+    
+    def sample_given(self, size: Tuple[int, int], batch_size: int, given: Dict[str, float]) -> torch.Tensor:
+        condition_size = len(self.conditions)
+
+        if self.minfs:
+            closest_size = find_closest_size(size, self.minfs.keys()) # Returns the closest size which has a GMM
+            
+            net: MultivariateFlowMixture = self.minfs[closest_size]
+            
+            given_with_indices = {self.conditions.index(name): torch.full((batch_size,), value, device=self.device) for name, value in given.items()}
+            
+            conditions = net.sample_given(given_with_indices)
+
+        else:
+            # If no models are found, fallback to using uniform distributions whose bounds are the range estimates.
+            # This should never be needed but it is here is for completeness.
+            bounds = self.range_estimates.get(size)
+            if bounds is None:
+                bounds = tuple(
+                    torch.tensor(bound) 
+                    for bound in zip(*(self.condition_utility.get_range_estimates(name, size) for name in conditions))
+                )
+                self.range_estimates[size] = bounds
+            conditions = torch.lerp(*bounds, torch.rand((batch_size, condition_size)))
+            given_names, given_values = tuple(zip(*list(sorted(given.items()))))
+            given_values = torch.tensor(given_values)
+            given_indices = torch.tensor([self.conditions.index(name) for name in given_names], dtype=int) # The indices of the given conditions
+            conditions[:, given_indices] = given_values
+        
+        if self.config.snap:
+            for index, snap_function in enumerate(self.snap_functions):
+                conditions[:,index] = snap_function(conditions[:,index], size)
+        
+        return conditions
+    
+    def save(self, path: str):
+        torch.save({size:net.state_dict() for size, net in self.minfs.items()}, path)
+    
+    def load(self, path: str):
+        saved = torch.load(path, map_location=self.device)
+        self.minfs = {}
+        for size, params in saved.items():
+            net = MultivariateFlowMixture(len(self.conditions), self.config.n_components, self.config.n_bins, self.config.n_layers).to(self.device)
+            net.load_state_dict(params)
+            self.minfs[size] = net

@@ -1,0 +1,9 @@
+!obj:methods.ms_conditions/MINFConditionModel.Config
+  snap: True
+  n_components: 16
+  n_layers: 1
+  n_bins: 8
+  batch_size: 128
+  epochs: 2
+  add_noise: true
+  verbose: 2
