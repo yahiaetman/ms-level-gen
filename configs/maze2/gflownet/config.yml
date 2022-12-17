@@ -19,9 +19,9 @@ dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
   data_augmentation: false
   diversity_sampling: true
   diversity_reward: true
-  property_reward: "math.log(item['solution-length'] + item['explored'])"
-  cluster_key: &key "(item['explored']//max(*size), item['solution-length']//max(*size))"
-  cluster_threshold:
+  property_reward: null #"math.log(item['solution-length'] + item['explored'])"
+  cluster_key: &key "(item['explored']//(sum(size)//2), item['solution-length']//(sum(size)//2))"
+  cluster_threshold: &cluster_thresholds
     !tup [4, 4]: 1
     !tup [4, 8]: 2
     !tup [8, 4]: 2
@@ -37,16 +37,9 @@ condition_model_config: !obj:methods.ms_conditions/KDEConditionModel.Config
     explored-ratio: !tup [-5, 10]
   diversity_sampling: true
   cluster_key: *key
-  cluster_threshold:
-    !tup [4, 4]: 1
-    !tup [4, 8]: 2
-    !tup [8, 4]: 2
-    !tup [8, 8]: 2
-    !tup [8,14]: 2
-    !tup [14,8]: 2
-    !tup [14,14]: 2
+  cluster_threshold: *cluster_thresholds
 
-generator_config: !inc "configs/models/ms_gflownet/snake_ms_ce_gru.yml"
+generator_config: !inc "configs/models/ms_gflownet/snake_ms_ce_grux.yml"
 
 optimizer_config: !obj:methods.ms_gflownet.optimizers/GFlowMSTBOptimizer.Config {}
 

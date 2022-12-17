@@ -21,3 +21,14 @@ controlled_conditions:
       !tup [14, 14]: 10
       !tup [20, 14]: 10
       !tup [20, 20]: 10
+  explored:
+    tolerence:
+      !tup [4, 4]: 10
+      !tup [4, 8]: 10
+      !tup [8, 4]: 10
+      !tup [8, 8]: 10
+      !tup [14, 8]: 10
+      !tup [8, 14]: 10
+      !tup [14, 14]: 10
+      !tup [20, 14]: 10
+      !tup [20, 20]: 10

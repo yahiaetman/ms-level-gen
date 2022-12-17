@@ -121,9 +121,16 @@ class Maze2ConditionUtility(ConditionUtility):
             def snap(x: float, size: Tuple[int, int]):
                 h, w = size
                 area = h*w
-                return self.mul(self.clamp(self.round(self.mul(x, self.const(area))), self.const(1), None), self.const(1/area))
+                return self.mul(self.clamp(self.round(self.mul(x, self.const(area))), self.const(1), self.const(area)), self.const(1/area))
             return snap if size is None else (lambda x: snap(x, size))
         
+        if prop_name == "explored-ratio":
+            def snap(x: float, size: Tuple[int, int]):
+                h, w = size
+                area = h*w
+                return self.mul(self.clamp(self.round(self.mul(x, self.const(area))), self.const(1), self.const(area)), self.const(1/area))
+            return snap if size is None else (lambda x: snap(x, size))
+
         if prop_name == "difficulty":
             def snap(x: float, size: Tuple[int, int]):
                 return self.clamp(x, self.const(0), self.const(1))
@@ -143,6 +150,9 @@ class Maze2ConditionUtility(ConditionUtility):
         
         if prop_name == "solution-length-norm":
             return 0.5/(h*w)
+        
+        if prop_name == "explored-ratio":
+            return 0.5/(h*w)
 
         if prop_name == "difficulty":
             return 0.5/(h*w)
@@ -157,6 +167,9 @@ class Maze2ConditionUtility(ConditionUtility):
         h, w = size
         
         if prop_name == "solution-length-norm":
+            return 1/(h*w), 1.0
+        
+        if prop_name == "explored-ratio":
             return 1/(h*w), 1.0
 
         if prop_name == "difficulty":

@@ -19,8 +19,8 @@ dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
   diversity_sampling: true
   diversity_reward: true
   property_reward: "math.log(1+item['maximum-path-length'])"
-  cluster_key: "(item['walls']//10, item['maximum-path-length']//5)"
-  cluster_threshold:
+  cluster_key:  &key "(item['walls']//(sum(size)//2), item['maximum-path-length']//(sum(size)//2))"
+  cluster_threshold: &cluster_thresholds
     !tup [4, 4]: 2
     !tup [4, 8]: 2
     !tup [8, 4]: 2
@@ -34,17 +34,10 @@ condition_model_config: !obj:methods.ms_conditions/KDEConditionModel.Config
     wall-ratio: !tup [-2, 2]
     maximum-path-length-norm: !tup [-5, 10]
   diversity_sampling: true
-  cluster_key: "(item['walls']//10, item['maximum-path-length']//5)"
-  cluster_threshold:
-    !tup [4, 4]: 2
-    !tup [4, 8]: 2
-    !tup [8, 4]: 2
-    !tup [8, 8]: 2
-    !tup [8,14]: 2
-    !tup [14,8]: 2
-    !tup [14,14]: 2
+  cluster_key: *key
+  cluster_threshold: *cluster_thresholds
 
-generator_config: !inc "configs/models/ms_gflownet/snake_ms_ce_gru.yml"
+generator_config: !inc "configs/models/ms_gflownet/snake_ms_ce_grux.yml"
 
 optimizer_config: !obj:methods.ms_gflownet.optimizers/GFlowMSTBOptimizer.Config {}
 

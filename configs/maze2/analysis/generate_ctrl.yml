@@ -37,4 +37,18 @@ controlled_conditions:
     !tup [14,14]: !range [0, 98]
     !tup [20,14]: !range [0, 99]
     !tup [20,20]: !range [0, 99]
+- control_name: "explored"
+  condition: "explored-ratio"
+  mapping: "value/(size[0] * size[1])"
+  amount_per_pin: 100
+  values:
+    !tup [4, 4]: !range [0, 8]
+    !tup [4, 8]: !range [0, 16]
+    !tup [8, 4]: !range [0, 16]
+    !tup [8, 8]: !range [0, 32]
+    !tup [14,8]: !range [0, 61]
+    !tup [8,14]: !range [0, 61]
+    !tup [14,14]: !range [0, 98]
+    !tup [20,14]: !range [0, 99]
+    !tup [20,20]: !range [0, 99]
 trials: 1

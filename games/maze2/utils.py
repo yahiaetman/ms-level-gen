@@ -18,7 +18,7 @@ def is_fully_connected(obstacles: List[List[bool]]) -> bool:
                 q.append(c)
     return len(walkable) == 0
 
-def solve(obstacles: List[List[bool]], starting_point: Tuple[int, int], goal_point: Tuple[int, int], h_factor: float = 1, g_factor: float = 1) -> Optional[str]:
+def solve(obstacles: List[List[bool]], starting_point: Tuple[int, int], goal_point: Tuple[int, int], h_factor: float = 1, g_factor: float = 1) -> Optional[Tuple[str,int]]:
     h, w = len(obstacles), len(obstacles[0])
     area = h*w
 
