@@ -10,6 +10,8 @@ if($GAME -eq "sokoban") {
     $CONDITIONS = @("path-length", "nearest-enemy-distance", "enemies")
 } elseif($GAME -eq "dave") {
     $CONDITIONS = @("solution-length", "jumps", "spikes")
+} elseif($GAME -eq "maze") {
+    $CONDITIONS = @("maximum-path-length", "walls")
 } else {
     Write-Error "Unknown game: $GAME"
     exit
@@ -51,4 +53,4 @@ Write-Output "Generating levels to test the controllability for all the sizes ..
 python cli.py cgenms "$ROOT/checkpoints/model_%END.pt" "$ROOT/condition_models/GMM" "$root/output" -cfg "configs/$GAME/analysis/generate_ctrl.yml" 
 # generate statistics for all sizes together
 Write-Output "Computing controllability statistics for all the sizes ..."
-python cli.py cstatsms "$ROOT/output/ctrl_levels_*x*.json" "$ROOT/statistics\statistics_ctrl.yml" -cfg "configs/$GAME/analysis/statistics_ctrl.yml"
+python cli.py cstatsms "$ROOT/output/ctrl_levels_*x*.json" "$ROOT/statistics/statistics_ctrl.yml" -cfg "configs/$GAME/analysis/statistics_ctrl.yml"
