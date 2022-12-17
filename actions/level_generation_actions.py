@@ -16,6 +16,8 @@ Arguments:
     * -f, --filter: a regex filter to pick which sizes to keep in the generation process.
             Typically, the sizes would be tagged with 'it' for in-training and 'oot' for 
             out-of-training.
+    * -p, --profile: Enables profile mode and define the number of repetition
+            (default: 0, no profiling).
     * -cfg & -ovr: The generation configuration.
 
 The generation configurations contains:
@@ -95,10 +97,7 @@ def action_generate_levels_ms(args: argparse.Namespace):
 
     pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
 
-    generation_stats = {}
-    for size_index, size in enumerate(generation_sizes):
-        h, w = size
-        print(f"{size_index+1}/{len(generation_sizes)}: Working on Size {h}x{w} ...")
+    def generate(size):
         results = []
         found = 0
         requests = 0
@@ -119,14 +118,52 @@ def action_generate_levels_ms(args: argparse.Namespace):
             if found == generation_amount:
                 break
         elapsed_time = time.time() - start_time
-        print(f"Done in {elapsed_time} seconds ({trial} trials) using {requests} requests")
-        json.dump(results, open(os.path.join(output_path, f"{prefix}levels_{h}x{w}.json"), 'w'))
-        generation_stats[size] = {
-            "trials": trials,
-            "requests": requests,
-            "solvable": found,
-            "elapsed_seconds": elapsed_time
-        }
+        return results, found, requests, trial, elapsed_time
+
+    repeats = args.profile # if > 0, then no output will be generated and the result is only used for profiling
+    if repeats > 0:
+        print("Running in Profiling Mode ...")
+        print('Warm-Up')
+        generate(generation_sizes[0]) # warm up
+        import statistics
+        summary = lambda prefix, data: {
+                f"{prefix}-mean": statistics.mean(data),
+                f"{prefix}-median": statistics.median(data),
+                f"{prefix}-stdev": statistics.stdev(data),
+                f"{prefix}-min": min(data),
+                f"{prefix}-max": max(data),
+            }
+
+    generation_stats = {}
+    for size_index, size in enumerate(generation_sizes):
+        h, w = size
+        print(f"{size_index+1}/{len(generation_sizes)}: Working on Size {h}x{w} ...")
+        if repeats > 0:
+            
+            collected = {
+                'found':[], 'requests':[], 'trial':[], 'elapsed_time':[]
+            }
+            for r in range(1, repeats+1):
+                print(f"Repeat {r}/{repeats}:")
+                _, found, requests, trial, elapsed_time = generate(size)
+                print(f"Done in {elapsed_time} seconds ({trial} trials) using {requests} requests")
+                collected['found'].append(found)
+                collected['requests'].append(requests)
+                collected['trial'].append(trial)
+                collected['elapsed_time'].append(elapsed_time)
+            stats = {key: val for prefix, data in collected.items() for key, val in summary(prefix, data).items()}
+            print(f"Generation time for {h}x{w} levels =", stats['elapsed_time-mean'], u"\u00B1", stats['elapsed_time-stdev'], "seconds")
+            generation_stats[size] = stats
+        else:
+            results, found, requests, trial, elapsed_time = generate(size)
+            print(f"Done in {elapsed_time} seconds ({trial} trials) using {requests} requests")
+            json.dump(results, open(os.path.join(output_path, f"{prefix}levels_{h}x{w}.json"), 'w'))
+            generation_stats[size] = {
+                "trials": trials,
+                "requests": requests,
+                "solvable": found,
+                "elapsed_seconds": elapsed_time
+            }
     yaml.dump(generation_stats, open(os.path.join(output_path, f"{prefix}generation_stats.yml"), 'w'))
 
 def register_generate_levels_ms(parser: argparse.ArgumentParser):
@@ -135,6 +172,7 @@ def register_generate_levels_ms(parser: argparse.ArgumentParser):
     parser.add_argument("output", type=str, help="path to which the levels will be saved")
     parser.add_argument("-gen", "--generator", type=str, default="", help="path to the condition model file")
     parser.add_argument("--filter", "-f", type=str, default=".*", help="the generator size filter")
+    parser.add_argument("--profile", "-p", type=int, default=0, help="Enables profiling mode and sets the number of repetitions")
     config_tools.add_config_arguments(parser)
     parser.set_defaults(func=action_generate_levels_ms)
 
