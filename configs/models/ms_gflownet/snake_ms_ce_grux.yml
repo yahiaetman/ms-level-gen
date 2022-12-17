@@ -1,0 +1,4 @@
+!obj:methods.ms_gflownet.models/SnakeMSCEGRUX.Config
+layer_count: 2
+layer_size: 64
+embedding_size: 32
