@@ -1,0 +1,12 @@
+generation_sizes:
+  !tup [4, 4]: 'it'
+  !tup [4, 8]: 'it'
+  !tup [8, 4]: 'it'
+  !tup [8, 8]: 'it'
+  !tup [14, 8]: 'it'
+  !tup [8, 14]: 'it'
+  !tup [14, 14]: 'it'
+  !tup [20, 14]: 'oot'
+  !tup [20, 20]: 'oot'
+generation_amount: 10000
+trials: 1

@@ -12,6 +12,10 @@ if($GAME -eq "sokoban") {
     $CONDITIONS = @("solution-length", "jumps", "spikes")
 } elseif($GAME -eq "maze") {
     $CONDITIONS = @("maximum-path-length", "walls")
+} elseif($GAME -eq "maze2") {
+    $CONDITIONS = @("maximum-path-length", "walls")
+} elseif($GAME -eq "maze3") {
+    $CONDITIONS = @("path-length", "walls")
 } else {
     Write-Error "Unknown game: $GAME"
     exit

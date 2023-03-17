@@ -15,4 +15,5 @@ dependencies:
   - seaborn>=0.11
   - pip
   - pip:
-    - git+https://github.com/yahiaetman/sokosolve
+    - git+https://github.com/yahiaetman/sokosolve.git
+    - nflows

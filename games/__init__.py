@@ -27,6 +27,7 @@ GAMES = {
     "dave": __game_getter("dave.dave", "Dave"),
     "maze": __game_getter("maze.maze", "Maze"),
     "maze2": __game_getter("maze2.maze2", "Maze2"),
+    "maze3": __game_getter("maze3.maze3", "Maze3"),
     "sokoban": __game_getter("sokoban.sokoban", "Sokoban"),
     "vampy": __game_getter("vampy.vampy", "Vampy"),
     "zelda": __game_getter("zelda.zelda", "Zelda"),
