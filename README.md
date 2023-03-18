@@ -1,4 +1,5 @@
-# Start Small: Training Game Level Generators from Nothing by Learning at Multiple Sizes
+<!-- omit in toc -->
+# Start Small: Training Controllable Game Level Generators without Training Data by Learning at Multiple Sizes
 
 <p align="center">
   <img src="docs/cover.png" />
@@ -6,9 +7,10 @@
 
 Original Image by [José-Manuel Benitos](https://commons.wikimedia.org/wiki/User:Locutus_Borg) ([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)).
 
+<!-- omit in toc -->
 ## About
 
-This repository contains the code for the paper ["Start Small: Training Game Level Generators from Nothing by Learning at Multiple Sizes"](https://arxiv.org/abs/2209.15052). It proposes a method to train level generators from nothing by starting at a small size. The method makes the following assumptions:
+This repository contains the code for the paper ["Start Small: Training Controllable Game Level Generators without Training Data by Learning at Multiple Sizes"](https://arxiv.org/abs/2209.15052). It proposes a method to train level generators from nothing by starting at a small size. The method makes the following assumptions:
 - The probability of finding playable levels via random exploration is sufficiently high at small level sizes.
 - The generator can gain knowledge from learning at small sizes to start generating levels at larger sizes.
 
@@ -18,27 +20,28 @@ For the first assumption, we are yet to try a game that does not satisfy it. For
 - Generate levels at sizes that were not seen during training (but the performance is usually better if the model was trained on the targeted size).
 - Control the generator's output by supplying the desired properties as inputs to the model.
 
+<!-- omit in toc -->
 ## Table of Content
 
-  - [Code Organization](#code-organization)
-  - [Method Structure](#method-structure)
-  - [Adding a new Game](#adding-a-new-game)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [Pretrained Weights](#pretrained-weights)
-  - [Generated Level Samples](#generated-level-samples)
-  - [Citation](#citation)
-  - [License](#license)
+- [Code Organization](#code-organization)
+- [Method Structure](#method-structure)
+- [Adding a new Game](#adding-a-new-game)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Pretrained Weights](#pretrained-weights)
+- [Generated Level Samples](#generated-level-samples)
+- [Citation](#citation)
+- [License](#license)
 
 ## Code Organization
 
 The repository is organized as follows:
 - `cli.py`: which is the main entry point that can be used to invoke the different actions defined in the folder `actions`.
-- `actions`: where the different actions, that `cli.py` can invoke, are implemented. The actions are organized into different files by their purpose (training, level generation, analysis, etc).
+- `actions`: where the different actions, that `cli.py` can invoke, are implemented. The actions are organized into different files by their purpose (training, level generation, analysis, etc.).
 - `common`: which contains some common utilities such as the configuration tools and the heatmap generator.
 - `games`: which contains the implementations of the different games. The games are listed in a dictionary inside `games/__init__.py`.
-- `methods`: which contains the implementations of the different methods (includng the method proposed in the paper). Each method is defined in a separate subfolder.
-- `datasets`: contains some dataset for some of the games. It is used by one of the methods, but not by the method proposed in the paper.
+- `methods`: which contains the implementations of the different methods (including the method proposed in the paper). Each method is defined in a separate subfolder.
+- `datasets`: contains some dataset for some games. It is used by one of the methods, but not by the method proposed in the paper.
 - `configs`: which contains the configurations for all the experiments and analyses for the different games and methods.
 - `analyze.ps1`: which is a powershell script that runs all the analysis actions on an experiment.
 
@@ -55,7 +58,7 @@ T-->C[Condition Model];
 The main components are:
 - `Generator`: which is the module that learns to generate the levels.
 - `Optimizer`: which is responsible for optimizing the generator. Its interface depends on the method, so each optimizer can only be used with a compatible trainer and for a compatible generator.
-- `Dataset`: where the levels are stored. It also differs depending on the method so it can only be used by a compatible trainer. For some methods (such as the GFlowNet level generator), the dataset is initially empty and is filled over time. In that case, it acts as an experience replay buffer.
+- `Dataset`: where the levels are stored. It also differs depending on the method, so it can only be used by a compatible trainer. For some methods (such as the GFlowNet level generator), the dataset is initially empty and is filled over time. In that case, it acts as an experience replay buffer.
 - `Condition Model`: which is used to sample conditions. The trainer should update it after it updates the dataset. Currently, the implemented condition models are trainer-agnostic and can be used with all the trainers available in this repository. 
 - `Trainer`: which is the class that orchestrates the whole training process.
 
@@ -76,11 +79,11 @@ you can either create a new environment from it using:
     conda env create -f environment.yml
     conda activate msgen
 
-or update an existing envionment using:
+or update an existing environment using:
 
     conda env update --file environment.yml
 
-**Note:** The dependencies install a package from a github repo ([sokosolve](https://github.com/yahiaetman/sokosolve)) which is a sokoban solver required to run the sokoban experiments.
+**Note:** The dependencies install a package from a Github repo ([sokosolve](https://github.com/yahiaetman/sokosolve)) which is a Sokoban solver required to run the Sokoban experiments.
 
 ## Usage
 
@@ -96,7 +99,7 @@ This will save the experiment results in the folder `./experiment`. You can also
 
     python cli.py train -cfg ./configs/sokoban/gflownet/div-tuple.yml -ovr save_path="./experiment" dataset_config.data_augmentation:=False
 
-The `:=` sign means that the value after it will be passed to the python builtin function `eval`, and it is useful to set options that are not strings. If the training was interrupted, you can resume it using:
+The `:=` sign means that the value after it will be passed to the python built-in function `eval`, and it is useful to set options that are not strings. If the training was interrupted, you can resume it using:
 
     python cli.py resume ./experiment
  
@@ -118,7 +121,7 @@ There are still more scripts, so it would become tedious to repeat them after ev
 
 Note that this script requires the game name to pick some options. If you want to run all the experiments in the paper (including the analysis steps), you can just run [paper_experiments.ps1](paper_experiments.ps1) but note that it runs 30 experiments so it would probably require multiple days to finish depending on your machine.
 
-To explore the results of the generators by hand, you can run them, and try different control values and level sizes in the jupyter notebook [explore.ipynb](explore.ipynb).
+To explore the results of the generators by hand, you can run them, and try different control values and level sizes in the Jupyter notebook [explore.ipynb](explore.ipynb).
 
 ## Pretrained Weights
 
@@ -170,7 +173,7 @@ If you find this work useful, please consider citing it:
   doi = {10.48550/ARXIV.2209.15052},
   url = {https://arxiv.org/abs/2209.15052},
   author = {Zakaria, Yahia and Fayek, Magda and Hadhoud, Mayada},
-  title = {Start Small: Training Game Level Generators from Nothing by Learning at Multiple Sizes},
+  title = {Start Small: Training Controllable Game Level Generators without Training Data by Learning at Multiple Sizes},
   publisher = {arXiv},
   year = {2022}
 }
