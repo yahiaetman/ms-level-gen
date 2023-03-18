@@ -199,7 +199,7 @@ class Trainer:
 
             if augment_dataset:
                 self.writer.add_scalars(f"Dataset/Size", {str(size):len(items) for size, items in self.dataset.items.items()}, step)
-                self.writer.add_scalars(f"Dataset/Clusters", {str(size):len(clusters) for size, clusters in self.dataset.clusters.items()}, step)
+                self.writer.add_scalars(f"Dataset/Clusters", {str(size):distribution.leaf_count for size, distribution in self.dataset.distributions.items()}, step)
 
             if self.heatmap is not None and step % self.config.heatmap_render_period == 0:
                 for size in self.dataset.sizes:

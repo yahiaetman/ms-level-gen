@@ -187,7 +187,7 @@ class Trainer:
 
                 # Other than the seed size (the first size), all the other sizes are not trained until a certain
                 # number of cluster for them already exists.
-                if size_index < self.config.seed_count or len(self.dataset.clusters[size]) >= self.dataset.config.cluster_threshold.get(size, 1):
+                if size_index < self.config.seed_count or self.dataset.distributions[size].leaf_count >= self.dataset.config.cluster_threshold.get(size, 1):
                     pbar.set_description(f"{size}: Tell Optimizer.....")
                     loss, log_z0 = self.optG.tell(log_rewards.to(self.device))
                     losses["on-policy"] = loss
@@ -210,7 +210,7 @@ class Trainer:
                 self.writer.add_scalars(f"Generation/Quality_{size}", stats, step)
 
             self.writer.add_scalars(f"Dataset/Size", {str(size):len(items) for size, items in self.dataset.items.items()}, step)
-            self.writer.add_scalars(f"Dataset/Clusters", {str(size):len(clusters) for size, clusters in self.dataset.clusters.items()}, step)
+            self.writer.add_scalars(f"Dataset/Clusters", {str(size):distribution.leaf_count for size, distribution in self.dataset.distributions.items()}, step)
 
             if self.heatmap is not None and step % self.config.heatmap_render_period == 0:
                 for size in self.dataset.sizes:

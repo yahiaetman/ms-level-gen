@@ -19,7 +19,9 @@ dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
   diversity_sampling: true
   diversity_reward: true
   property_reward: "math.log(1+item['path-length'])"
-  cluster_key:  &key "item['path-length']" #"(item['walls']//(sum(size)//2), item['path-length']//(sum(size)//2))"
+  cluster_key:  &key
+    - !obj:methods.diversity/ClusterNode.Config { key: "item['path-length']//(sum(size)//2)" }
+    - !obj:methods.diversity/ClusterNode.Config { key: "item['walls']//(sum(size)//2)" }
   cluster_threshold: &cluster_thresholds
     !tup [4, 4]: 2
     !tup [4, 8]: 2
@@ -47,3 +49,5 @@ checkpoint_period: 1000
 
 heatmap_config: !inc "~/..//heatmap.yml"
 heatmap_render_period: 100
+
+name_suffix: "NESTED"

@@ -3,7 +3,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import reduce
 import random, math # Do not remove the math library, it is needed to eval functions from the config.
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Union
 import warnings
 
 import torch
@@ -11,6 +11,7 @@ from sklearn.mixture import BayesianGaussianMixture
 
 from common.config_tools import config
 from games.game import Game
+from .diversity import NodeConfig, DiverseDistribution
 from .utils import find_closest_size, find_closest_smaller_size
 
 class ConditionModel:
@@ -117,7 +118,7 @@ class KDEConditionModel(ConditionModel):
         """
         noise_factors: Dict[str: Tuple[float, float]] = field(default_factory=lambda:{}, metadata={'merge': False})
         diversity_sampling: bool = False
-        cluster_key: Optional[str] = None
+        cluster_key: Union[str, List[NodeConfig], None] = None
         cluster_threshold: Dict[Tuple[int, int]] = field(default_factory=lambda:{}, metadata={'merge': False})
 
         @property
@@ -149,10 +150,8 @@ class KDEConditionModel(ConditionModel):
         self.noise = {}
         self.range_estimates = {}
         
-        self.cluster_key = (lambda *_: 0) if self.config.cluster_key is None else eval(f"lambda item, size: {self.config.cluster_key}")
-        
         self.items = defaultdict(list)
-        self.clusters = defaultdict(dict)
+        self.distributions: Dict[Tuple[int, int], DiverseDistribution] = {}
         self.cluster_thresholds = {}
     
     # get the cluster threshold for a given size. If it is not found, the thresold for the closest size is returned.
@@ -180,7 +179,10 @@ class KDEConditionModel(ConditionModel):
         """
         if len(new_info) == 0: return
         items = self.items[size]
-        clusters = self.clusters[size]
+        distribution = self.distributions.get(size)
+        if distribution is None:
+            distribution = DiverseDistribution(self.config.cluster_key, {"size": size})
+            self.distributions[size] = distribution
 
         if size not in self.cluster_thresholds:
             self.cluster_thresholds[size] = self.__compute_cluster_threshold(size)
@@ -192,12 +194,8 @@ class KDEConditionModel(ConditionModel):
             self.noise[size] = (noise_min_factor * delta, noise_max_factor * delta)
 
         for info in new_info:
-            cluster_key = self.cluster_key(info, size)
             conditions = torch.tensor([info[name] for name in self.conditions])
-            if cluster_key in clusters:
-                clusters[cluster_key].append(len(items))
-            else:
-                clusters[cluster_key] = [len(items)]
+            distribution.add(info, len(items))
             items.append(conditions)
     
 
@@ -218,7 +216,7 @@ class KDEConditionModel(ConditionModel):
         """
         condition_size = len(self.conditions)
         
-        available_sizes = [size for size, cluster in self.clusters.items() if len(cluster) >= self.cluster_thresholds[size]]
+        available_sizes = [size for size, distribution in self.distributions.items() if distribution.leaf_count >= self.cluster_thresholds[size]]
         closest_size = find_closest_smaller_size(size, available_sizes)
 
         if closest_size is None:
@@ -232,19 +230,20 @@ class KDEConditionModel(ConditionModel):
             conditions = torch.lerp(*bounds, torch.rand((batch_size, condition_size)))
         else:
             items = self.items[closest_size]
-            clusters = list(self.clusters[closest_size].values())
+            distribution = self.distributions[closest_size]
             noise = self.noise[closest_size]
             conditions = torch.lerp(*noise, torch.rand((batch_size, condition_size)))
             for index in range(batch_size):
                 if self.config.diversity_sampling:
-                    cluster = random.choice(clusters)
-                    item = items[random.choice(cluster)] 
+                    item_idx, _ = distribution.sample()
+                    item = items[item_idx] 
                 else:
                     item = random.choice(items)
                 conditions[index] += item
         
         for index, snap_function in enumerate(self.snap_functions):
             conditions[:,index] = snap_function(conditions[:,index], size)
+        
         return conditions
 
 ############################

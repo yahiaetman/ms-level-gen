@@ -1,10 +1,11 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 import math, random, json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Union, Tuple
 
 import torch
 from common.config_tools import config
+from methods.diversity import NodeConfig, DiverseDistribution
 
 from games import Game
 from games.game import Level
@@ -49,11 +50,11 @@ class Dataset:
         """
         data_augmentation: bool = False
         diversity_sampling: bool = False
-        cluster_key: Optional[str] = None
-        cluster_threshold: Dict[Tuple[int, int]] = field(default_factory=lambda:{})
+        cluster_key: Union[str, List[NodeConfig], None] = None
+        cluster_threshold: Dict[Tuple[int, int], int] = field(default_factory=lambda:{})
 
     items: Dict[Tuple[int, int], List[DatasetItem]]
-    clusters: Dict[Tuple[int, int], Dict[Any, List[int]]]
+    distributions: Dict[Tuple[int, int], DiverseDistribution]
 
     def __init__(self, game: Game, conditions: List[str], sizes: List[Tuple[int, int]], config: Dataset.Config) -> None:
         """The dataset initializer
@@ -84,9 +85,7 @@ class Dataset:
                                                     # We store the item index only in the clusters.
         self.seen = {size:set() for size in sizes}  # A set for each size to quickly test for levels that are already in the dataset.
         
-        self.cluster_key = (lambda *_: 0) if self.config.cluster_key is None else eval(f"lambda item, size: {self.config.cluster_key}")
-        self.clusters = {size:{} for size in sizes} # For each size, the clustering is stored as a dictionary containing the cluster keys and
-                                                    # and a coresponding list of indices that point to items in "self.items" that are in this cluster.
+        self.distributions = {size:DiverseDistribution(self.config.cluster_key, {'size': size}) for size in sizes}
         
 
     def analyze_and_update(self, size: Tuple[int, int], new_levels: List[Level]):
@@ -126,7 +125,7 @@ class Dataset:
         """
         items = self.items[size]
         seen = self.seen[size]
-        clusters = self.clusters[size]
+        distribution = self.distributions[size]
 
         # used to store some statistics about the dataset update process.
         compilable_count, solvable_count, new_count = 0, 0, 0
@@ -153,11 +152,8 @@ class Dataset:
             if any(tile_key in seen for tile_key in tile_keys): continue
             for tile_key in tile_keys: seen.add(tile_key)
             
-            # Add level to cluster or create a new cluster for it.
-            if cluster_key in clusters:
-                clusters[cluster_key].append(len(items))
-            else:
-                clusters[cluster_key] = [len(items)]
+            # Add level to the diverse distribution
+            distribution.add(info, len(items))
             
             item = DatasetItem(
                 torch.tensor(variants),
@@ -233,16 +229,16 @@ class Dataset:
         items = self.items[size]
         if len(items) == 0: return None
         
-        clusters = list(self.clusters[size].values())
-        if len(clusters) < self.config.cluster_threshold.get(size, 0): return None
+        distribution = self.distributions[size]
+        if distribution.leaf_count < self.config.cluster_threshold.get(size, 0): return None
         
         levels = torch.zeros((batch_size, *size), dtype=torch.int64)
         conditions = torch.empty((batch_size, len(self.conditions)), dtype=torch.float)
 
         for index in range(batch_size):
             if self.config.diversity_sampling:
-                cluster = random.choice(clusters)
-                item = items[random.choice(cluster)] 
+                item_idx, _ = distribution.sample()
+                item = items[item_idx]
             else:
                 item = random.choice(items)
         
