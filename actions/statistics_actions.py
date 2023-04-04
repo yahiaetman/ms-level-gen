@@ -615,6 +615,7 @@ def action_render_percentile_levels_ms(args: argparse.Namespace):
         if as_figure:
             import matplotlib.pyplot as plt
             plt.rcParams["font.family"] = "Times New Roman"
+            plt.rcParams["font.size"] = "14"
 
             images = images.transpose([0, 1, 3, 4, 2])
 
@@ -625,7 +626,8 @@ def action_render_percentile_levels_ms(args: argparse.Namespace):
             subfigs = fig.subfigures(nrows=len(properties), ncols=1)
             for row, subfig in enumerate(subfigs):
                 prop_name: str = properties[row]
-                prop_name = '\n'.join(s.capitalize() for s in prop_name.split('-'))
+                prop_name = [s.capitalize() for s in prop_name.split('-')][:2]
+                prop_name = '\n'.join(prop_name)
                 subfig.suptitle(prop_name, x=0.05, y=0.5, rotation=90, va='center')
 
                 # create 1x3 subplots per subfig
@@ -644,6 +646,8 @@ def action_render_percentile_levels_ms(args: argparse.Namespace):
                         prefix = f"{percentiles[col]*100}%" 
                     ax.set_title(f'{prefix}: {values[row][col]}')
             
+            #fig.subplots_adjust(wspace=0, hspace=0)
+
             fig.savefig(f"{outputs_path}_{h}x{w}.pdf", bbox_inches='tight')
         else:
             img_utils.save_images(f"{outputs_path}_{h}x{w}.png", images, (len(properties), len(percentiles)))
