@@ -1,0 +1,29 @@
+!inc "~/base.yml"
+---
+!obj:methods.ms_gflownet.trainer/Trainer.Config
+dataset_config: !obj:methods.ms_gflownet.dataset/Dataset.Config
+  data_augmentation: true
+  diversity_sampling: true
+  diversity_reward: true
+  property_reward: "math.log(item['solution-length'])"
+  cluster_key: &key
+    - !obj:methods.diversity/ClusterNode.Config { key: "(item['pushed-crates'], item['solution-length']//sum(size))" }
+    - !obj:methods.diversity/ClusterNode.Config { key: "tuple(item['push-signature'])" }
+  cluster_threshold:
+    !tup [3, 3]: 1
+    !tup [4, 4]: 1
+    !tup [5, 5]: 1
+    !tup [6, 6]: 2
+    !tup [7, 7]: 2
+
+condition_model_config: !obj:methods.ms_conditions/KDEConditionModel.Config
+  diversity_sampling: true
+  cluster_key: *key
+  cluster_threshold:
+    !tup [3, 3]: 1
+    !tup [4, 4]: 1
+    !tup [5, 5]: 1
+    !tup [6, 6]: 2
+    !tup [7, 7]: 2
+
+name_suffix: "NESTED_PUSHSIG"

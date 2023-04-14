@@ -8,6 +8,7 @@ controlled_conditions:
       !tup [14, 8]: 10
       !tup [8, 14]: 10
       !tup [14, 14]: 14
+      !tup [14, 20]: 17
       !tup [20, 14]: 17
       !tup [20, 20]: 20
   path-length:
@@ -19,5 +20,6 @@ controlled_conditions:
       !tup [14, 8]: 10
       !tup [8, 14]: 10
       !tup [14, 14]: 14
+      !tup [14, 20]: 17
       !tup [20, 14]: 17
       !tup [20, 20]: 20

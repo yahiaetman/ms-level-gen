@@ -6,6 +6,7 @@ generation_sizes:
   !tup [14, 8]: 'it'
   !tup [8, 14]: 'it'
   !tup [14, 14]: 'it'
+  !tup [14, 20]: 'oot'
   !tup [20, 14]: 'oot'
   !tup [20, 20]: 'oot'
 controlled_conditions:
@@ -22,6 +23,7 @@ controlled_conditions:
     !tup [8,14]: !range [0, 99]
     !tup [14,14]: !range [0, 99]
     !tup [20,14]: !range [0, 99]
+    !tup [14,20]: !range [0, 99]
     !tup [20,20]: !range [0, 99]
 - control_name: "path-length"
   condition: "path-length-norm"
@@ -35,6 +37,7 @@ controlled_conditions:
     !tup [14,8]: !range [0, 61]
     !tup [8,14]: !range [0, 61]
     !tup [14,14]: !range [0, 98]
+    !tup [14,20]: !range [0, 99]
     !tup [20,14]: !range [0, 99]
     !tup [20,20]: !range [0, 99]
 trials: 1
