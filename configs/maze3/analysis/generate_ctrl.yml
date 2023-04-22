@@ -15,29 +15,29 @@ controlled_conditions:
   mapping: "value/(size[0] * size[1])"
   amount_per_pin: 100
   values:
-    !tup [4, 4]: !range [0, 15]
-    !tup [4, 8]: !range [0, 31]
-    !tup [8, 4]: !range [0, 31]
-    !tup [8, 8]: !range [0, 63]
-    !tup [14,8]: !range [0, 99]
-    !tup [8,14]: !range [0, 99]
-    !tup [14,14]: !range [0, 99]
-    !tup [20,14]: !range [0, 99]
-    !tup [14,20]: !range [0, 99]
-    !tup [20,20]: !range [0, 99]
+    !tup [4, 4]: !range [0, 10]
+    !tup [4, 8]: !range [0, 22]
+    !tup [8, 4]: !range [0, 22]
+    !tup [8, 8]: !range [0, 50]
+    !tup [14,8]: !range [0, 92]
+    !tup [8,14]: !range [0, 92]
+    !tup [14,14]: !range [0, 170]
+    !tup [20,14]: !range [0, 248]
+    !tup [14,20]: !range [0, 248]
+    !tup [20,20]: !range [0, 362]
 - control_name: "path-length"
   condition: "path-length-norm"
   mapping: "value/(size[0] * size[1])"
   amount_per_pin: 100
   values:
-    !tup [4, 4]: !range [0, 8]
-    !tup [4, 8]: !range [0, 16]
-    !tup [8, 4]: !range [0, 16]
-    !tup [8, 8]: !range [0, 32]
-    !tup [14,8]: !range [0, 61]
-    !tup [8,14]: !range [0, 61]
-    !tup [14,14]: !range [0, 98]
-    !tup [14,20]: !range [0, 99]
-    !tup [20,14]: !range [0, 99]
-    !tup [20,20]: !range [0, 99]
+    !tup [4, 4]: !range [6, 7]
+    !tup [4, 8]: !range [10, 16]
+    !tup [8, 4]: !range [10, 16]
+    !tup [8, 8]: !range [14, 32]
+    !tup [14,8]: !range [20, 56]
+    !tup [8,14]: !range [20, 56]
+    !tup [14,14]: !range [26, 98]
+    !tup [14,20]: !range [32, 140]
+    !tup [20,14]: !range [32, 140]
+    !tup [20,20]: !range [38, 200]
 trials: 1

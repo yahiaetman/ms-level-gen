@@ -9,5 +9,7 @@ generation_sizes:
   !tup [14, 20]: 'oot'
   !tup [20, 14]: 'oot'
   !tup [20, 20]: 'oot'
+  !tup [30, 30]: 'oot'
+  !tup [100, 100]: 'oot'
 generation_amount: 10000
 trials: 1
