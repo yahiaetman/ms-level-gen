@@ -169,7 +169,7 @@ Danger Dave
 If you find this work useful, please consider citing it:
 
 ```
-@misc{msgen,
+@article{msgen,
   author   = {Yahia Zakaria and Magda Fayek and Mayada Hadhoud},
   journal  = {Alexandria Engineering Journal},
   title    = {Start small: Training controllable game level generators without training data by learning at multiple sizes},
