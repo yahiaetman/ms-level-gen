@@ -10,7 +10,7 @@ Original Image by [José-Manuel Benitos](https://commons.wikimedia.org/wiki/User
 <!-- omit in toc -->
 ## About
 
-This repository contains the code for the paper ["Start Small: Training Controllable Game Level Generators without Training Data by Learning at Multiple Sizes"](https://arxiv.org/abs/2209.15052). It proposes a method to train level generators from nothing by starting at a small size. The method makes the following assumptions:
+This repository contains the code for the paper ["Start Small: Training Controllable Game Level Generators without Training Data by Learning at Multiple Sizes"](https://doi.org/10.1016/j.aej.2023.04.019). It proposes a method to train level generators from nothing by starting at a small size. The method makes the following assumptions:
 - The probability of finding playable levels via random exploration is sufficiently high at small level sizes.
 - The generator can gain knowledge from learning at small sizes to start generating levels at larger sizes.
 
@@ -170,12 +170,16 @@ If you find this work useful, please consider citing it:
 
 ```
 @misc{msgen,
-  doi = {10.48550/ARXIV.2209.15052},
-  url = {https://arxiv.org/abs/2209.15052},
-  author = {Zakaria, Yahia and Fayek, Magda and Hadhoud, Mayada},
-  title = {Start Small: Training Controllable Game Level Generators without Training Data by Learning at Multiple Sizes},
-  publisher = {arXiv},
-  year = {2022}
+  author   = {Yahia Zakaria and Magda Fayek and Mayada Hadhoud},
+  journal  = {Alexandria Engineering Journal},
+  title    = {Start small: Training controllable game level generators without training data by learning at multiple sizes},
+  year     = {2023},
+  issn     = {1110-0168},
+  pages    = {479-494},
+  volume   = {72},
+  doi      = {https://doi.org/10.1016/j.aej.2023.04.019},
+  keywords = {Procedural content generation, Level generation, Deep learning, Generative flow networks, Generative models},
+  url      = {https://www.sciencedirect.com/science/article/pii/S1110016823002934},
 }
 ```
 
