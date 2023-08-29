@@ -9,6 +9,7 @@ import torch
 from torch.utils import tensorboard
 import tqdm
 import yaml
+import numpy as np
 from common.config_tools import config
 
 from games import GameConfig
@@ -169,11 +170,12 @@ class Trainer:
                 pbar.set_description(f"{size}: Ask For Levels.....")
                 levels = self.optG.ask(query_conditions.to(self.device), size)
 
-                if step%self.config.sample_render_period == 0:
-                    self.writer.add_images(f"Sample/Levels_{size}", self.game.render(levels.cpu().numpy()), step)
-                
                 pbar.set_description(f"{size}: Update Dataset.....")
                 info, added_mask, log_rewards, stats  = self.dataset.analyze_and_update(size, levels.tolist(), query_conditions)
+
+                if step%self.config.sample_render_period == 0:
+                    padding_colors = np.array([([0,127,0] if level_info["solvable"] else [127,0,0]) for level_info in info], dtype=np.uint8)
+                    self.writer.add_images(f"Sample/Levels_{size}", self.game.render(levels.cpu().numpy(), padding_color=padding_colors), step)
 
                 if self.heatmap is not None:
                     self.heatmap.update(size, info)

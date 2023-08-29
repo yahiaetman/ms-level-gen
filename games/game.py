@@ -324,7 +324,7 @@ class Game(ABC):
         h, w = size
         return [[[random.randint(0, len(self.__tiles)-1) for _ in range(w)] for _ in range(h)] for _ in range(level_count)]
 
-    def render(self, levels: np.ndarray, padding = 4) -> np.ndarray:
+    def render(self, levels: np.ndarray, padding: Optional[int] = 4, padding_color = None) -> np.ndarray:
         """Renders an array of levels into an array of images.
 
         Parameters
@@ -333,11 +333,13 @@ class Game(ABC):
             An array of level (dtype=int) with the shape (Batch_Size x Height x Width). 
         padding : int, optional
             The amount of white padding to add around the images. (Default: 4).
+        padding_color: np.ndarray
+            An array (dtype=int) with the shape (Batch_Size x 3) containing the padding color for each level
 
         Returns
         -------
         np.ndarray
-            The generated images with the shape (Batch_Size x 3 x Sprite_Height * Height x Sprite_Width * Width)
+            The generated images with the shape (Batch_Size x 3 x (Sprite_Height * Height + 2 * padding) x (Sprite_Width * Width + 2 * padding))
         """
         if self.__sprite_atlas is None: self.__sprite_atlas = load_sprite_atlas(self.__sprite_atlas_path)
         sprite_atlas = self.__sprite_atlas
@@ -345,17 +347,20 @@ class Game(ABC):
         if levels.ndim == 2: return self.render(levels[None,:,:])[0]
         *n, h, w = levels.shape
         *_, sh, sw = self.__sprite_atlas.shape
-        images = np.empty((*n, 3, h*sh, w*sw), dtype=sprite_atlas.dtype)
+        padding = 0 if padding is None else padding
+        if padding_color is None:
+            padding_color = np.full((*n, 3), fill_value=255, dtype=sprite_atlas.dtype)
+        ih, iw = h*sh + 2*padding, w*sw + 2*padding
+        images = np.expand_dims(np.expand_dims(padding_color, -1), -1)
+        images = np.tile(images, (1,)*(len(n)+1) + (ih,iw))
         for index in np.ndindex(*n):
             level = levels[index]
             image = images[index]
             for i, row in enumerate(level):
-                image_row = image[:, i*sw:(i+1)*sw]
+                image_row = image[:, padding+i*sw:padding+(i+1)*sw]
                 for j, tile in enumerate(row):
-                    image_row[:, :, j*sh:(j+1)*sh] = sprite_atlas[tile]
-        if padding is None:
-            return images
-        return np.pad(images, pad_width=((0,0),)*len(n) + ((0,0),(padding,padding),(padding,padding)), constant_values=255)
+                    image_row[:, :, padding+j*sh:padding+(j+1)*sh] = sprite_atlas[tile]
+        return images
 
     @abstractproperty
     def condition_utility(self) -> ConditionUtility:
