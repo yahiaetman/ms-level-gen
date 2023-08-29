@@ -21,7 +21,7 @@ controlled_conditions:
     !tup [5, 4]: !range [1, 6]
     !tup [5, 6]: !range [1, 7]
     !tup [5,11]: !range [1,12]
-    !tup [7, 6]: !range [1, 7]
+    !tup [7, 6]: !range [1, 8]
     !tup [7,11]: !range [1,12]
     !tup [6,10]: !range [1,11]
     !tup [10,6]: !range [1,11]

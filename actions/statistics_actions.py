@@ -19,11 +19,11 @@ def summary(prefix: str, data: List[float]) -> Dict[str, float]:
         a dictionary of the statistics in the form {'{prefix}-{statistic_name}' : statistic_value}.
     """
     return {
-        f"{prefix}-mean": statistics.mean(data),
-        f"{prefix}-median": statistics.median(data),
-        f"{prefix}-stdev": statistics.stdev(data),
-        f"{prefix}-min": min(data),
-        f"{prefix}-max": max(data),
+        f"{prefix}-mean": statistics.mean(data) if data else 0,
+        f"{prefix}-median": statistics.median(data) if data else 0,
+        f"{prefix}-stdev": statistics.stdev(data) if len(data) > 1 else 0,
+        f"{prefix}-min": min(data) if data else 0,
+        f"{prefix}-max": max(data) if data else 0,
     }
 
 def compute_statistics(info: List[Dict], config: Dict):
@@ -62,11 +62,15 @@ def compute_statistics(info: List[Dict], config: Dict):
     levels = [item["level"] for item in solvable]
     unique = set(tuple(tuple(row) for row in level) for level in levels)        
 
-    levels_np = np.array(levels)
-    _, h, w = levels_np.shape
-    diversity = sum( np.sum((levels_np[i] != levels_np[i+1:]).astype(np.int64)) for i in range(len(levels)-1) ) / ((w * h) * (solvable_count * (solvable_count - 1)) * 0.5)
-    diversity = float(diversity)
-    entropies = [games.utils.entropy(level) for level in levels]
+    if levels:
+        levels_np = np.array(levels)
+        _, h, w = levels_np.shape
+        diversity = sum( np.count_nonzero(levels_np[i] != levels_np[i+1:]) for i in range(len(levels)-1) ) / ((w * h) * (solvable_count * (solvable_count - 1)) * 0.5)
+        diversity = float(diversity)
+        entropies = [games.utils.entropy(level) for level in levels]
+    else:
+        diversity = 0
+        entropies = []
 
     stats = {
         "Compilable%": len(compilable) / total * 100,
